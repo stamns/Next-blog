@@ -19,8 +19,24 @@ import settingRoutes from './routes/setting.routes.js';
 const app = express();
 const PORT = process.env.PORT || 3012;
 
-// Middleware
-app.use(cors());
+// CORS 配置 - 支持环境变量 ALLOWED_ORIGINS（逗号分隔）
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['*'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // 允许无 origin 的请求（如服务端请求、Postman）
+    if (!origin) return callback(null, true);
+    // 允许所有来源
+    if (allowedOrigins.includes('*')) return callback(null, true);
+    // 检查是否在白名单
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(null, false);
+  },
+  credentials: true,
+}));
+
 app.use(express.json({ limit: '50mb' }));
 
 // Health check

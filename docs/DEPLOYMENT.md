@@ -61,9 +61,9 @@ npm run dev
 ```
 
 访问:
-- 前台: http://localhost:3000
-- 后台: http://localhost:3000/admin
-- API: http://localhost:3001/api
+- 前台: http://localhost:3011
+- 后台: http://localhost:3011/admin
+- API: http://localhost:3012/api
 
 ---
 
@@ -94,8 +94,9 @@ cd packages/server
 DATABASE_URL="file:./prod.db"
 JWT_SECRET="your-production-secret-key"
 ENCRYPTION_KEY="your-32-char-production-key"
-PORT=3001
+PORT=3012
 NODE_ENV=production
+ALLOWED_ORIGINS=https://your-domain.com
 ```
 
 #### 3. 运行数据库迁移
@@ -115,7 +116,9 @@ cd packages/server
 pm2 start dist/index.js --name blog-api
 ```
 
-#### 5. 配置 Nginx
+#### 5. 配置 Web 服务器
+
+##### Nginx 配置
 
 ```nginx
 server {
@@ -130,11 +133,14 @@ server {
 
     # API 代理
     location /api {
-        proxy_pass http://localhost:3001;
+        proxy_pass http://localhost:3012;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
 
@@ -143,6 +149,66 @@ server {
         alias /path/to/packages/server/uploads;
     }
 }
+```
+
+##### Caddy 配置
+
+Caddy 会自动处理 HTTPS 证书，配置更简洁。
+
+`Caddyfile`:
+```caddyfile
+your-domain.com {
+    # 前端静态文件
+    root * /path/to/packages/web/dist
+    
+    # API 反向代理
+    handle /api/* {
+        reverse_proxy localhost:3012
+    }
+    
+    # 媒体文件
+    handle /uploads/* {
+        root * /path/to/packages/server
+        file_server
+    }
+    
+    # SPA 路由支持
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+}
+```
+
+如果前后端分开部署（不同域名）：
+
+```caddyfile
+# 前端
+www.your-domain.com {
+    root * /path/to/packages/web/dist
+    try_files {path} /index.html
+    file_server
+}
+
+# 后端 API
+api.your-domain.com {
+    reverse_proxy localhost:3012
+}
+```
+
+#### 6. 配置 CORS（跨域）
+
+如果前后端使用不同域名，需要配置 `ALLOWED_ORIGINS` 环境变量：
+
+```env
+# 单个域名
+ALLOWED_ORIGINS=https://www.your-domain.com
+
+# 多个域名（逗号分隔）
+ALLOWED_ORIGINS=https://your-domain.com,https://www.your-domain.com
+
+# 允许所有（仅开发环境使用）
+ALLOWED_ORIGINS=*
 ```
 
 ---
@@ -197,11 +263,12 @@ services:
   api:
     build: ./packages/server
     ports:
-      - "3001:3001"
+      - "3012:3012"
     environment:
       - DATABASE_URL=file:./data/prod.db
       - JWT_SECRET=${JWT_SECRET}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
@@ -262,7 +329,7 @@ npx prisma migrate dev
 
 修改 `.env` 中的 `PORT` 或使用:
 ```bash
-PORT=3002 npm run dev
+PORT=3013 npm run dev
 ```
 
 ### 3. 前端无法连接后端
@@ -271,13 +338,21 @@ PORT=3002 npm run dev
 ```typescript
 proxy: {
   '/api': {
-    target: 'http://localhost:3001',
+    target: 'http://localhost:3012',
     changeOrigin: true,
   },
 }
 ```
 
-### 4. 图片上传失败
+### 4. CORS 跨域错误
+
+如果使用反向代理部署，确保配置了正确的 `ALLOWED_ORIGINS`：
+```bash
+# 在 .env 中设置
+ALLOWED_ORIGINS=https://your-domain.com,https://www.your-domain.com
+```
+
+### 5. 图片上传失败
 
 确保 `uploads` 目录存在且有写入权限:
 ```bash
@@ -299,7 +374,7 @@ pm2 logs blog-api
 ### 健康检查
 
 ```bash
-curl http://localhost:3001/api/health
+curl http://localhost:3012/api/health
 ```
 
 响应:
