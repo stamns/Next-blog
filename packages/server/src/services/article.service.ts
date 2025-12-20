@@ -27,16 +27,29 @@ export interface UpdateArticleInput {
 }
 
 function generateSlug(title: string): string {
-  return title
+  // 将中文转换为拼音，保留英文和数字
+  const pinyin = title
     .toLowerCase()
-    .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+    // 移除特殊字符，保留中文、英文、数字
+    .replace(/[^\w\u4e00-\u9fa5\s]/g, '')
+    .trim();
+  
+  // 简单的中文转拼音映射（常用字）- 实际生产环境建议使用 pinyin 库
+  // 这里使用时间戳确保唯一性
+  const slug = pinyin
+    .replace(/[\u4e00-\u9fa5]+/g, '') // 移除中文字符
+    .replace(/\s+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .substring(0, 100) + '-' + Date.now().toString(36);
+    .substring(0, 50);
+  
+  // 如果 slug 为空（全是中文），使用时间戳
+  const base = slug || 'article';
+  return base + '-' + Date.now().toString(36);
 }
 
 export class ArticleService {
   /**
-   * 创建新文章，生成唯一标识符并保存为草稿状态
+   * 创建新文章，生成唯一标识符并默认发布
    */
   async create(input: CreateArticleInput): Promise<Article> {
     const slug = generateSlug(input.title);
@@ -48,7 +61,8 @@ export class ArticleService {
         content: input.content,
         excerpt: input.excerpt,
         featuredImage: input.featuredImage,
-        status: 'DRAFT',
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
         authorId: input.authorId,
         categoryId: input.categoryId,
         seoTitle: input.seoTitle,

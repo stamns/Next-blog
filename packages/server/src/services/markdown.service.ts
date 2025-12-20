@@ -38,10 +38,18 @@ export class MarkdownService {
     const toc: TocItem[] = [];
     const headingStack: TocItem[] = [];
 
-    // 提取标题生成目录
+    // 先移除代码块，避免匹配代码块内的 #
+    const codeBlockPlaceholder = '___CODE_BLOCK___';
+    const codeBlocks: string[] = [];
+    const contentWithoutCode = markdown.replace(/```[\s\S]*?```/g, (match) => {
+      codeBlocks.push(match);
+      return codeBlockPlaceholder;
+    });
+
+    // 提取标题生成目录（只匹配行首的 #，且 # 后必须有空格）
     const headingRegex = /^(#{1,6})\s+(.+)$/gm;
     let match;
-    while ((match = headingRegex.exec(markdown)) !== null) {
+    while ((match = headingRegex.exec(contentWithoutCode)) !== null) {
       const level = match[1].length;
       const text = match[2].trim();
       const id = this.generateHeadingId(text);

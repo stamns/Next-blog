@@ -26,7 +26,7 @@ export function ArticleEditorPage() {
     excerpt: '',
     slug: '',
     featuredImage: '',
-    status: 'DRAFT' as 'DRAFT' | 'PUBLISHED',
+    status: 'PUBLISHED' as 'DRAFT' | 'PUBLISHED',
     categoryId: '',
     tagIds: [] as string[],
     seoTitle: '',
@@ -185,7 +185,7 @@ export function ArticleEditorPage() {
                 onChange={(e) => handleChange('categoryId', e.target.value)}
                 options={[
                   { value: '', label: '无分类' },
-                  ...(categories?.map((c) => ({ value: c.id, label: c.name })) || []),
+                  ...buildCategoryOptions(categories || []),
                 ]}
               />
             </CardContent>
@@ -270,3 +270,30 @@ export function ArticleEditorPage() {
     </div>
   );
 }
+
+// 构建层级分类选项
+function buildCategoryOptions(
+  categories: Category[],
+  parentId: string | null = null,
+  level: number = 0
+): { value: string; label: string }[] {
+  const result: { value: string; label: string }[] = [];
+  const prefix = level > 0 ? '　'.repeat(level) + '└ ' : '';
+
+  const items = categories.filter((c) => (c.parentId || null) === parentId);
+
+  for (const item of items) {
+    result.push({ value: item.id, label: prefix + item.name });
+    // 递归添加子分类
+    const children = buildCategoryOptions(categories, item.id, level + 1);
+    result.push(...children);
+  }
+
+  return result;
+}
+
+type Category = {
+  id: string;
+  name: string;
+  parentId?: string | null;
+};

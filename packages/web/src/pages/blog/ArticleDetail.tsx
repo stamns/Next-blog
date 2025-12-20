@@ -14,7 +14,7 @@ interface ArticleWithHtml {
   slug: string;
   content: string;
   htmlContent?: string;
-  toc?: { id: string; text: string; level: number }[];
+  toc?: TOCItem[];
   publishedAt?: string | null;
   createdAt: string;
   category?: { id: string; name: string } | null;
@@ -69,10 +69,37 @@ export function ArticleDetailPage() {
   }
 
   // 使用后端返回的目录，如果没有则从内容提取
-  const toc = article.toc || extractTOC(article.content);
+  const flatToc = article.toc || extractTOC(article.content);
+  const toc = buildTocTree(flatToc);
 
   // 使用后端渲染的 HTML，如果没有则前端渲染
   const htmlContent = article.htmlContent || renderMarkdown(article.content);
+
+  // 递归渲染目录项
+  const renderTocItems = (items: TOCItem[], depth: number = 0) => (
+    <ul className={depth > 0 ? 'ml-3 mt-1 space-y-1' : 'space-y-2'}>
+      {items.map((item, index) => (
+        <li key={index}>
+          <a
+            href={`#${item.id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setTocOpen(false);
+              const element = document.getElementById(item.id);
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                window.history.pushState(null, '', `#${item.id}`);
+              }
+            }}
+            className="block text-gray-600 dark:text-gray-400 hover:text-primary-600 transition-colors"
+          >
+            {item.text}
+          </a>
+          {item.children && item.children.length > 0 && renderTocItems(item.children, depth + 1)}
+        </li>
+      ))}
+    </ul>
+  );
 
   return (
     <BlogLayout config={config}>
@@ -95,26 +122,8 @@ export function ArticleDetailPage() {
               </svg>
             </button>
             {tocOpen && (
-              <nav className="mt-2 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 space-y-2 text-sm">
-                {toc.map((item, index) => (
-                  <a
-                    key={index}
-                    href={`#${item.id}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setTocOpen(false);
-                      const element = document.getElementById(item.id);
-                      if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        window.history.pushState(null, '', `#${item.id}`);
-                      }
-                    }}
-                    className="block text-gray-600 dark:text-gray-400 hover:text-primary-600 transition-colors"
-                    style={{ paddingLeft: `${(item.level - 1) * 12}px` }}
-                  >
-                    {item.text}
-                  </a>
-                ))}
+              <nav className="mt-2 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+                {renderTocItems(toc)}
               </nav>
             )}
           </div>
@@ -127,25 +136,8 @@ export function ArticleDetailPage() {
               <Card className="sticky top-20">
                 <CardContent className="p-4">
                   <h3 className="font-semibold mb-4">目录</h3>
-                  <nav className="space-y-2 text-sm max-h-[70vh] overflow-y-auto">
-                    {toc.map((item, index) => (
-                      <a
-                        key={index}
-                        href={`#${item.id}`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const element = document.getElementById(item.id);
-                          if (element) {
-                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            window.history.pushState(null, '', `#${item.id}`);
-                          }
-                        }}
-                        className="block text-gray-600 dark:text-gray-400 hover:text-primary-600 transition-colors"
-                        style={{ paddingLeft: `${(item.level - 1) * 12}px` }}
-                      >
-                        {item.text}
-                      </a>
-                    ))}
+                  <nav className="text-sm max-h-[70vh] overflow-y-auto">
+                    {renderTocItems(toc)}
                   </nav>
                 </CardContent>
               </Card>
@@ -171,6 +163,7 @@ interface TOCItem {
   id: string;
   text: string;
   level: number;
+  children?: TOCItem[];
 }
 
 // 生成 slug ID（与后端保持一致）
@@ -183,18 +176,47 @@ function generateSlugId(text: string): string {
 }
 
 function extractTOC(content: string): TOCItem[] {
-  const headingRegex = /^(#{1,3})\s+(.+)$/gm;
-  const toc: TOCItem[] = [];
+  // 先移除代码块，避免匹配代码块内的 #
+  const contentWithoutCode = content.replace(/```[\s\S]*?```/g, '');
+  
+  const headingRegex = /^(#{1,6})\s+(.+)$/gm;
+  const flatToc: TOCItem[] = [];
   let match;
 
-  while ((match = headingRegex.exec(content)) !== null) {
+  while ((match = headingRegex.exec(contentWithoutCode)) !== null) {
     const level = match[1].length;
     const text = match[2].trim();
     const id = generateSlugId(text);
-    toc.push({ id, text, level });
+    flatToc.push({ id, text, level });
   }
 
-  return toc;
+  return flatToc;
+}
+
+// 将扁平 TOC 转换为层级结构
+function buildTocTree(flatToc: TOCItem[]): TOCItem[] {
+  const result: TOCItem[] = [];
+  const stack: TOCItem[] = [];
+
+  for (const item of flatToc) {
+    const newItem: TOCItem = { ...item, children: [] };
+
+    while (stack.length > 0 && stack[stack.length - 1].level >= item.level) {
+      stack.pop();
+    }
+
+    if (stack.length === 0) {
+      result.push(newItem);
+    } else {
+      if (!stack[stack.length - 1].children) {
+        stack[stack.length - 1].children = [];
+      }
+      stack[stack.length - 1].children!.push(newItem);
+    }
+    stack.push(newItem);
+  }
+
+  return result;
 }
 
 // 前端备用渲染（当后端没有返回 htmlContent 时使用）
