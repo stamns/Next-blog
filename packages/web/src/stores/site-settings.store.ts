@@ -76,7 +76,6 @@ const defaultNavMenu: NavMenuItem[] = [
   { id: '2', label: '分类', url: '/categories', type: 'internal', sortOrder: 1 },
   { id: '3', label: '标签', url: '/tags', type: 'internal', sortOrder: 2 },
   { id: '4', label: '知识库', url: '/knowledge', type: 'internal', sortOrder: 3 },
-  { id: '5', label: '搜索', url: '/search', type: 'internal', sortOrder: 4 },
 ];
 
 export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({

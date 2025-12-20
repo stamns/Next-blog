@@ -2,6 +2,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { SearchBox } from '../../components/SearchBox';
 import { formatDate, truncate } from '../../lib/utils';
 import { useSiteSettingsStore } from '../../stores/site-settings.store';
 import type {
@@ -129,6 +130,8 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
             </span>
           ))}
           <span className="text-gray-300 dark:text-gray-700">·</span>
+          <SearchBox />
+          <span className="text-gray-300 dark:text-gray-700">·</span>
           <ThemeToggle />
         </div>
         {/* Mobile Nav */}
@@ -139,6 +142,8 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
           >
             {mobileMenuOpen ? '关闭' : '菜单'}
           </button>
+          <span className="text-gray-300 dark:text-gray-700">·</span>
+          <SearchBox />
           <span className="text-gray-300 dark:text-gray-700">·</span>
           <ThemeToggle />
         </div>

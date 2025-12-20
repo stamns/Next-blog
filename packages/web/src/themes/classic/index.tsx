@@ -2,6 +2,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { SearchBox } from '../../components/SearchBox';
 import { formatDate, truncate } from '../../lib/utils';
 import { useSiteSettingsStore } from '../../stores/site-settings.store';
 import type {
@@ -146,6 +147,7 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
               </svg>
             )}
           </button>
+          <SearchBox />
           <ThemeToggle />
         </div>
         {/* Mobile Nav */}
