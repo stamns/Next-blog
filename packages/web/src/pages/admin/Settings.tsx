@@ -88,6 +88,7 @@ function SiteSettings() {
     socialTwitter: '',
     socialWeibo: '',
     allowedMediaTypes: '',
+    commentEnabled: 'true',
   });
 
   useEffect(() => {
@@ -106,6 +107,7 @@ function SiteSettings() {
         socialTwitter: settings.socialTwitter || '',
         socialWeibo: settings.socialWeibo || '',
         allowedMediaTypes: settings.allowedMediaTypes || 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml,application/pdf',
+        commentEnabled: settings.commentEnabled ?? 'true',
       });
     }
   }, [settings]);
@@ -264,6 +266,34 @@ function SiteSettings() {
             <p className="text-xs text-gray-500">
               用逗号分隔 MIME 类型。常用类型：image/jpeg, image/png, image/gif, image/webp, image/svg+xml, application/pdf
             </p>
+          </CardContent>
+        </Card>
+
+        {/* 评论设置 */}
+        <Card className="mb-6">
+          <CardHeader>
+            <h2 className="text-lg font-semibold">评论设置</h2>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">启用评论功能</div>
+                <p className="text-sm text-gray-500">开启后，访客可以在文章底部发表评论</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, commentEnabled: form.commentEnabled === 'true' ? 'false' : 'true' })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  form.commentEnabled === 'true' ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    form.commentEnabled === 'true' ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
           </CardContent>
         </Card>
 
@@ -793,6 +823,7 @@ interface MenuItem {
   url: string;
   type: 'internal' | 'external' | 'page';
   sortOrder: number;
+  visible?: boolean;
   children?: MenuItem[];
 }
 
@@ -812,18 +843,18 @@ function MenuSettings() {
 
   // 默认菜单
   const defaultMenu: MenuItem[] = [
-    { id: '1', label: '首页', url: '/', type: 'internal', sortOrder: 0 },
-    { id: '2', label: '分类', url: '/categories', type: 'internal', sortOrder: 1 },
-    { id: '3', label: '标签', url: '/tags', type: 'internal', sortOrder: 2 },
-    { id: '4', label: '知识库', url: '/knowledge', type: 'internal', sortOrder: 3 },
-    { id: '5', label: '搜索', url: '/search', type: 'internal', sortOrder: 4 },
+    { id: '1', label: '首页', url: '/', type: 'internal', sortOrder: 0, visible: true },
+    { id: '2', label: '分类', url: '/categories', type: 'internal', sortOrder: 1, visible: true },
+    { id: '3', label: '标签', url: '/tags', type: 'internal', sortOrder: 2, visible: true },
+    { id: '4', label: '知识库', url: '/knowledge', type: 'internal', sortOrder: 3, visible: true },
+    { id: '5', label: '搜索', url: '/search', type: 'internal', sortOrder: 4, visible: true },
   ];
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenu);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
-  const [form, setForm] = useState({ label: '', url: '', type: 'internal' as MenuItem['type'] });
+  const [form, setForm] = useState({ label: '', url: '', type: 'internal' as MenuItem['type'], visible: true });
 
   useEffect(() => {
     if (settings?.navMenu) {
@@ -857,14 +888,14 @@ function MenuSettings() {
   const handleAdd = (parentItemId?: string) => {
     setEditingItem(null);
     setParentId(parentItemId || null);
-    setForm({ label: '', url: '', type: 'internal' });
+    setForm({ label: '', url: '', type: 'internal', visible: true });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: MenuItem, parentItemId?: string) => {
     setEditingItem(item);
     setParentId(parentItemId || null);
-    setForm({ label: item.label, url: item.url, type: item.type });
+    setForm({ label: item.label, url: item.url, type: item.type, visible: item.visible !== false });
     setIsModalOpen(true);
   };
 
@@ -919,6 +950,26 @@ function MenuSettings() {
     setIsModalOpen(false);
   };
 
+  const toggleVisibility = (id: string, parentItemId?: string) => {
+    if (parentItemId) {
+      setMenuItems(menuItems.map(item => {
+        if (item.id === parentItemId) {
+          return {
+            ...item,
+            children: item.children?.map(c => 
+              c.id === id ? { ...c, visible: c.visible === false ? true : false } : c
+            ),
+          };
+        }
+        return item;
+      }));
+    } else {
+      setMenuItems(menuItems.map(item => 
+        item.id === id ? { ...item, visible: item.visible === false ? true : false } : item
+      ));
+    }
+  };
+
   const moveItem = (index: number, direction: 'up' | 'down', parentItemId?: string) => {
     if (parentItemId) {
       setMenuItems(menuItems.map(item => {
@@ -946,7 +997,7 @@ function MenuSettings() {
 
   const renderMenuItem = (item: MenuItem, index: number, parentItemId?: string) => (
     <div key={item.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-      <div className={`flex items-center gap-4 p-3 ${parentItemId ? 'pl-10 bg-gray-50/50 dark:bg-gray-800/30' : 'bg-gray-50 dark:bg-gray-800'} rounded-lg`}>
+      <div className={`flex items-center gap-4 p-3 ${parentItemId ? 'pl-10 bg-gray-50/50 dark:bg-gray-800/30' : 'bg-gray-50 dark:bg-gray-800'} rounded-lg ${item.visible === false ? 'opacity-50' : ''}`}>
         <div className="flex flex-col gap-1">
           <button
             onClick={() => moveItem(index, 'up', parentItemId)}
@@ -967,6 +1018,7 @@ function MenuSettings() {
           <div className="font-medium flex items-center gap-2">
             {parentItemId && <span className="text-gray-400">└</span>}
             {item.label}
+            {item.visible === false && <span className="text-xs text-gray-400">(隐藏)</span>}
           </div>
           <div className="text-sm text-gray-500">{item.url}</div>
         </div>
@@ -974,6 +1026,14 @@ function MenuSettings() {
           {item.type === 'internal' ? '内部' : item.type === 'external' ? '外部' : '页面'}
         </Badge>
         <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => toggleVisibility(item.id, parentItemId)}
+            className={item.visible === false ? 'text-green-600' : 'text-gray-500'}
+          >
+            {item.visible === false ? '显示' : '隐藏'}
+          </Button>
           {!parentItemId && (
             <Button variant="ghost" size="sm" onClick={() => handleAdd(item.id)}>
               添加子菜单

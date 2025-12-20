@@ -18,6 +18,7 @@ export interface SiteSettings {
   sliderEnabled: string;
   sliderStyle: string;
   sliderItems: string;
+  commentEnabled: string;
 }
 
 export interface NavMenuItem {
@@ -26,6 +27,7 @@ export interface NavMenuItem {
   url: string;
   type: 'internal' | 'external' | 'page';
   sortOrder: number;
+  visible?: boolean;
   children?: NavMenuItem[];
 }
 
@@ -46,6 +48,7 @@ interface SiteSettingsState {
   getSliderItems: () => SliderItem[];
   isSliderEnabled: () => boolean;
   getSliderStyle: () => 'full' | 'cards' | 'minimal';
+  isCommentEnabled: () => boolean;
 }
 
 const defaultSettings: SiteSettings = {
@@ -65,6 +68,7 @@ const defaultSettings: SiteSettings = {
   sliderEnabled: 'true',
   sliderStyle: 'full',
   sliderItems: '',
+  commentEnabled: 'true',
 };
 
 const defaultNavMenu: NavMenuItem[] = [
@@ -90,11 +94,20 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
 
   getNavMenu: () => {
     const { settings } = get();
+    const filterVisible = (items: NavMenuItem[]): NavMenuItem[] => {
+      return items
+        .filter(item => item.visible !== false)
+        .map(item => ({
+          ...item,
+          children: item.children ? filterVisible(item.children) : undefined,
+        }));
+    };
+    
     if (settings.navMenu) {
       try {
         const parsed = JSON.parse(settings.navMenu);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return filterVisible(parsed);
         }
       } catch {
         // 返回默认菜单
@@ -123,5 +136,10 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
   getSliderStyle: () => {
     const { settings } = get();
     return (settings.sliderStyle as 'full' | 'cards' | 'minimal') || 'full';
+  },
+
+  isCommentEnabled: () => {
+    const { settings } = get();
+    return settings.commentEnabled !== 'false';
   },
 }));

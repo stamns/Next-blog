@@ -4,7 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { Card, CardContent } from '../../components/ui';
 import { useBlogThemeStore } from '../../stores/blog-theme.store';
+import { useSiteSettingsStore } from '../../stores/site-settings.store';
 import { getTheme } from '../../themes';
+import { CommentSection } from '../../components/CommentSection';
 
 interface ArticleWithHtml {
   id: string;
@@ -24,6 +26,7 @@ interface ArticleWithHtml {
 export function ArticleDetailPage() {
   const { slug } = useParams();
   const { currentTheme, fetchActiveTheme, getConfig } = useBlogThemeStore();
+  const { fetchSettings, isCommentEnabled } = useSiteSettingsStore();
   const theme = getTheme(currentTheme);
   const { BlogLayout, ArticleDetail } = theme;
   const config = getConfig();
@@ -31,7 +34,8 @@ export function ArticleDetailPage() {
 
   useEffect(() => {
     fetchActiveTheme();
-  }, [fetchActiveTheme]);
+    fetchSettings();
+  }, [fetchActiveTheme, fetchSettings]);
 
   const {
     data: article,
@@ -151,6 +155,11 @@ export function ArticleDetailPage() {
           {/* 文章内容 - 使用主题组件 */}
           <div className={toc.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}>
             <ArticleDetail article={{ ...article, htmlContent }} config={config} />
+            
+            {/* 评论区 */}
+            {isCommentEnabled() && (
+              <CommentSection articleId={article.id} />
+            )}
           </div>
         </div>
       </div>

@@ -237,4 +237,21 @@ router.post('/:id/restore', authenticate, async (req: AuthRequest, res: Response
   }
 });
 
+/**
+ * DELETE /api/articles/:id/permanent
+ * 永久删除文章
+ */
+router.delete('/:id/permanent', authenticate, async (req: AuthRequest, res: Response, next) => {
+  try {
+    await articleService.hardDelete(req.params.id);
+
+    res.json({
+      success: true,
+      data: { message: 'Article permanently deleted' },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
