@@ -8,12 +8,14 @@ const router = Router();
 
 const createCategorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  slug: z.string().optional(),
   parentId: z.string().optional(),
   sortOrder: z.number().optional(),
 });
 
 const updateCategorySchema = z.object({
   name: z.string().min(1).optional(),
+  slug: z.string().optional(),
   parentId: z.string().nullable().optional(),
   sortOrder: z.number().optional(),
 });

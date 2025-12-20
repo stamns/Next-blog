@@ -1,11 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import type { KnowledgeDoc } from '../../types';
-import { Card, CardContent, CardHeader } from '../../components/ui';
-import { BlogLayout } from '../../layouts/BlogLayout';
+import { useBlogThemeStore } from '../../stores/blog-theme.store';
+import { getTheme } from '../../themes';
 
 export function KnowledgeBasePage() {
+  const { currentTheme, fetchActiveTheme } = useBlogThemeStore();
+  const theme = getTheme(currentTheme);
+  const { BlogLayout } = theme;
+
+  useEffect(() => {
+    fetchActiveTheme();
+  }, [fetchActiveTheme]);
+
   const { data: docs, isLoading } = useQuery({
     queryKey: ['public-knowledge'],
     queryFn: () => api.get<KnowledgeDoc[]>('/knowledge/public'),
@@ -35,43 +43,39 @@ export function KnowledgeBasePage() {
 
   return (
     <BlogLayout>
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">知识库</h1>
+      <h1 className="text-2xl font-bold mb-8">📚 知识库</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 文档树 */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <h2 className="font-semibold">文档目录</h2>
-            </CardHeader>
-            <CardContent className="p-2">
-              {isLoading ? (
-                <div className="p-4 text-center text-gray-500">加载中...</div>
-              ) : !docs?.length ? (
-                <div className="p-4 text-center text-gray-500">暂无文档</div>
-              ) : (
-                <div className="space-y-1">{renderTree(docs)}</div>
-              )}
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 文档树 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-semibold">文档目录</h2>
+          </div>
+          <div className="p-2">
+            {isLoading ? (
+              <div className="p-4 text-center text-gray-500">加载中...</div>
+            ) : !docs?.length ? (
+              <div className="p-4 text-center text-gray-500">暂无文档</div>
+            ) : (
+              <div className="space-y-1">{renderTree(docs)}</div>
+            )}
+          </div>
+        </div>
 
-          {/* 文档内容 */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <h2 className="font-semibold">{selectedDoc?.title || '选择文档'}</h2>
-            </CardHeader>
-            <CardContent>
-              {selectedDoc ? (
-                <div className="prose dark:prose-invert max-w-none">
-                  <MarkdownContent content={selectedDoc.content} />
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-12">
-                  从左侧选择一个文档查看内容
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* 文档内容 */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-semibold">{selectedDoc?.title || '选择文档'}</h2>
+          </div>
+          <div className="p-6">
+            {selectedDoc ? (
+              <div className="prose dark:prose-invert max-w-none">
+                <MarkdownContent content={selectedDoc.content} />
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 py-12">从左侧选择一个文档查看内容</div>
+            )}
+          </div>
         </div>
       </div>
     </BlogLayout>

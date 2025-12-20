@@ -3,12 +3,14 @@ import type { Category, Prisma } from '@prisma/client';
 
 export interface CreateCategoryInput {
   name: string;
+  slug?: string;
   parentId?: string;
   sortOrder?: number;
 }
 
 export interface UpdateCategoryInput {
   name?: string;
+  slug?: string;
   parentId?: string | null;
   sortOrder?: number;
 }
@@ -26,7 +28,7 @@ export class CategoryService {
    * 创建分类
    */
   async create(input: CreateCategoryInput): Promise<Category> {
-    const slug = generateSlug(input.name);
+    const slug = input.slug || generateSlug(input.name);
 
     return prisma.category.create({
       data: {

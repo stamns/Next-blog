@@ -69,36 +69,51 @@ function hello() {
 
   // 创建内置主题
   await prisma.theme.upsert({
-    where: { name: 'default-light' },
+    where: { name: 'classic' },
     update: {},
     create: {
-      name: 'default-light',
+      name: 'classic',
       version: '1.0.0',
-      path: '/themes/default-light',
+      path: '/themes/classic',
       isActive: true,
       config: JSON.stringify({
-        primaryColor: '#0ea5e9',
-        fontFamily: 'system-ui',
+        displayName: '经典主题',
+        description: '传统博客风格，简洁大方',
       }),
     },
   });
 
   await prisma.theme.upsert({
-    where: { name: 'default-dark' },
+    where: { name: 'minimal' },
     update: {},
     create: {
-      name: 'default-dark',
+      name: 'minimal',
       version: '1.0.0',
-      path: '/themes/default-dark',
+      path: '/themes/minimal',
       isActive: false,
       config: JSON.stringify({
-        primaryColor: '#38bdf8',
-        fontFamily: 'system-ui',
+        displayName: '极简主题',
+        description: '简约风格，专注阅读体验',
       }),
     },
   });
 
-  console.log('Created default themes');
+  await prisma.theme.upsert({
+    where: { name: 'magazine' },
+    update: {},
+    create: {
+      name: 'magazine',
+      version: '1.0.0',
+      path: '/themes/magazine',
+      isActive: false,
+      config: JSON.stringify({
+        displayName: '杂志主题',
+        description: '卡片式布局，现代视觉风格',
+      }),
+    },
+  });
+
+  console.log('Created default themes: classic, minimal, magazine');
 
   console.log('Seed completed!');
 }

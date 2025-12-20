@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 interface User {
   id: string;
   username: string;
-  email: string;
+  email?: string;
 }
 
 interface AuthState {
@@ -42,7 +42,17 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+      onRehydrateStorage: () => (state) => {
+        // 恢复时同步 token 到 localStorage
+        if (state?.token) {
+          localStorage.setItem('token', state.token);
+        }
+      },
     }
   )
 );

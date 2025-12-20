@@ -1,13 +1,22 @@
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import type { Article } from '../../types';
 import { Badge, Card, CardContent } from '../../components/ui';
 import { formatDate } from '../../lib/utils';
-import { BlogLayout } from '../../layouts/BlogLayout';
+import { useBlogThemeStore } from '../../stores/blog-theme.store';
+import { getTheme } from '../../themes';
 
 export function ArticleDetailPage() {
   const { slug } = useParams();
+  const { currentTheme, fetchActiveTheme } = useBlogThemeStore();
+  const theme = getTheme(currentTheme);
+  const { BlogLayout, ArticleDetail } = theme;
+
+  useEffect(() => {
+    fetchActiveTheme();
+  }, [fetchActiveTheme]);
 
   const { data: article, isLoading, error } = useQuery({
     queryKey: ['article', slug],
@@ -41,43 +50,17 @@ export function ArticleDetailPage() {
   // 从内容中提取目录
   const toc = extractTOC(article.content);
 
+  // 简单渲染 HTML 内容
+  const htmlContent = renderMarkdown(article.content);
+
   return (
     <BlogLayout>
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* 文章内容 */}
-          <article className="lg:col-span-3">
-            <header className="mb-8">
-              <h1 className="text-3xl font-bold mb-4">{article.title}</h1>
-              
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span>{formatDate(article.publishedAt || article.createdAt)}</span>
-                {article.category && (
-                  <Link
-                    to={`/?category=${article.category.id}`}
-                    className="text-primary-600 hover:underline"
-                  >
-                    {article.category.name}
-                  </Link>
-                )}
-                <span>阅读 {article.viewCount}</span>
-              </div>
-              
-              {article.tags && article.tags.length > 0 && (
-                <div className="flex items-center gap-2 mt-4">
-                  {article.tags.map((tag) => (
-                    <Link key={tag.id} to={`/?tag=${tag.id}`}>
-                      <Badge variant="default">{tag.name}</Badge>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </header>
-
-            <div className="prose dark:prose-invert max-w-none">
-              <MarkdownContent content={article.content} />
-            </div>
-          </article>
+          {/* 文章内容 - 使用主题组件 */}
+          <div className="lg:col-span-3">
+            <ArticleDetail article={{ ...article, htmlContent }} />
+          </div>
 
           {/* 侧边栏 - 目录 */}
           {toc.length > 0 && (
@@ -128,9 +111,8 @@ function extractTOC(content: string): TOCItem[] {
   return toc;
 }
 
-function MarkdownContent({ content }: { content: string }) {
-  // 简单的 Markdown 渲染
-  const html = content
+function renderMarkdown(content: string): string {
+  return content
     .replace(/^### (.*$)/gim, '<h3 id="$1">$1</h3>')
     .replace(/^## (.*$)/gim, '<h2 id="$1">$1</h2>')
     .replace(/^# (.*$)/gim, '<h1 id="$1">$1</h1>')
@@ -139,6 +121,4 @@ function MarkdownContent({ content }: { content: string }) {
     .replace(/`([^`]+)`/gim, '<code>$1</code>')
     .replace(/```(\w*)\n([\s\S]*?)```/gim, '<pre><code class="language-$1">$2</code></pre>')
     .replace(/\n/gim, '<br />');
-
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }

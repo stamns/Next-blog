@@ -1,17 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import type { Article, PaginatedResponse } from '../../types';
-import { Card, CardContent, Badge, Pagination } from '../../components/ui';
-import { formatDate, truncate } from '../../lib/utils';
-import { BlogLayout } from '../../layouts/BlogLayout';
+import { Pagination } from '../../components/ui';
+import { useBlogThemeStore } from '../../stores/blog-theme.store';
+import { getTheme } from '../../themes';
 
 export function ArticleListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get('page')) || 1;
   const categoryId = searchParams.get('category') || '';
   const tagId = searchParams.get('tag') || '';
+
+  const { currentTheme, fetchActiveTheme } = useBlogThemeStore();
+  const theme = getTheme(currentTheme);
+  const { BlogLayout, ArticleCard } = theme;
+
+  useEffect(() => {
+    fetchActiveTheme();
+  }, [fetchActiveTheme]);
 
   const params = new URLSearchParams();
   params.set('page', String(page));
@@ -30,9 +38,12 @@ export function ArticleListPage() {
     setSearchParams(searchParams);
   };
 
+  // 杂志主题使用网格布局
+  const isGridLayout = currentTheme === 'magazine';
+
   return (
     <BlogLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className={isGridLayout ? 'max-w-7xl mx-auto' : 'max-w-4xl mx-auto'}>
         <h1 className="text-3xl font-bold mb-8">文章列表</h1>
 
         {isLoading ? (
@@ -40,43 +51,9 @@ export function ArticleListPage() {
         ) : !data?.items.length ? (
           <div className="text-center py-12 text-gray-500">暂无文章</div>
         ) : (
-          <div className="space-y-6">
+          <div className={isGridLayout ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-6'}>
             {data.items.map((article) => (
-              <Card key={article.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <Link to={`/article/${article.slug}`}>
-                    <h2 className="text-xl font-semibold mb-2 hover:text-primary-600 transition-colors">
-                      {article.title}
-                    </h2>
-                  </Link>
-                  
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {truncate(article.excerpt || article.content, 200)}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-4">
-                      <span className="text-gray-500">{formatDate(article.publishedAt || article.createdAt)}</span>
-                      {article.category && (
-                        <Link
-                          to={`/?category=${article.category.id}`}
-                          className="text-primary-600 hover:underline"
-                        >
-                          {article.category.name}
-                        </Link>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {article.tags?.slice(0, 3).map((tag) => (
-                        <Link key={tag.id} to={`/?tag=${tag.id}`}>
-                          <Badge variant="default">{tag.name}</Badge>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <ArticleCard key={article.id} article={article} />
             ))}
           </div>
         )}

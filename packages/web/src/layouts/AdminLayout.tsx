@@ -81,6 +81,17 @@ export function AdminLayout() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
+        {/* Top Bar */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex justify-end">
+          <Link
+            to="/"
+            target="_blank"
+            className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+          >
+            查看首页
+            <span>↗</span>
+          </Link>
+        </div>
         <div className="p-6">
           <Outlet />
         </div>
