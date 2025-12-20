@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import type { AIModel } from '../../types';
 import { themes } from '../../themes';
+import { useCategoriesFlat } from '../../hooks/useCategories';
 import {
   Button,
   Card,
@@ -825,7 +826,7 @@ interface MenuItem {
   id: string;
   label: string;
   url: string;
-  type: 'internal' | 'external' | 'page';
+  type: 'internal' | 'external' | 'page' | 'category';
   sortOrder: number;
   visible?: boolean;
   children?: MenuItem[];
@@ -844,6 +845,8 @@ function MenuSettings() {
     queryKey: ['pages'],
     queryFn: () => api.get<any[]>('/pages'),
   });
+
+  const { data: categories } = useCategoriesFlat();
 
   // 默认菜单
   const defaultMenu: MenuItem[] = [
@@ -1026,8 +1029,8 @@ function MenuSettings() {
           </div>
           <div className="text-sm text-gray-500">{item.url}</div>
         </div>
-        <Badge variant={item.type === 'external' ? 'warning' : 'default'}>
-          {item.type === 'internal' ? '内部' : item.type === 'external' ? '外部' : '页面'}
+        <Badge variant={item.type === 'external' ? 'warning' : item.type === 'category' ? 'primary' : 'default'}>
+          {item.type === 'internal' ? '内部' : item.type === 'external' ? '外部' : item.type === 'category' ? '分类' : '页面'}
         </Badge>
         <div className="flex gap-2">
           <Button 
@@ -1140,20 +1143,46 @@ function MenuSettings() {
           <Select
             label="链接类型"
             value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value as MenuItem['type'] })}
+            onChange={(e) => {
+              const newType = e.target.value as MenuItem['type'];
+              setForm({ ...form, type: newType, url: '' });
+            }}
             options={[
               { value: 'internal', label: '内部链接' },
               { value: 'external', label: '外部链接' },
               { value: 'page', label: '独立页面' },
+              { value: 'category', label: '文章分类' },
             ]}
           />
-          <Input
-            label="链接地址"
-            value={form.url}
-            onChange={(e) => setForm({ ...form, url: e.target.value })}
-            placeholder={form.type === 'external' ? 'https://example.com' : '/path'}
-            required
-          />
+          {form.type === 'page' && pages && pages.length > 0 ? (
+            <Select
+              label="选择页面"
+              value={form.url}
+              onChange={(e) => setForm({ ...form, url: e.target.value })}
+              options={[
+                { value: '', label: '-- 请选择页面 --' },
+                ...pages.map(p => ({ value: `/page/${p.slug}`, label: p.title })),
+              ]}
+            />
+          ) : form.type === 'category' && categories && categories.length > 0 ? (
+            <Select
+              label="选择分类"
+              value={form.url}
+              onChange={(e) => setForm({ ...form, url: e.target.value })}
+              options={[
+                { value: '', label: '-- 请选择分类 --' },
+                ...buildCategoryOptions(categories),
+              ]}
+            />
+          ) : (
+            <Input
+              label="链接地址"
+              value={form.url}
+              onChange={(e) => setForm({ ...form, url: e.target.value })}
+              placeholder={form.type === 'external' ? 'https://example.com' : '/path'}
+              required
+            />
+          )}
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>取消</Button>
             <Button type="submit">保存</Button>
@@ -1162,6 +1191,26 @@ function MenuSettings() {
       </Modal>
     </div>
   );
+}
+
+// 构建层级分类选项
+function buildCategoryOptions(
+  categories: Array<{ id: string; name: string; parentId?: string | null }>,
+  parentId: string | null = null,
+  level: number = 0
+): { value: string; label: string }[] {
+  const result: { value: string; label: string }[] = [];
+  const prefix = level > 0 ? '　'.repeat(level) + '└ ' : '';
+
+  const items = categories.filter((c) => (c.parentId || null) === parentId);
+
+  for (const item of items) {
+    result.push({ value: `/?category=${item.id}`, label: prefix + item.name });
+    const children = buildCategoryOptions(categories, item.id, level + 1);
+    result.push(...children);
+  }
+
+  return result;
 }
 
 

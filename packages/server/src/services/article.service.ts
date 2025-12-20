@@ -234,8 +234,14 @@ export class ArticleService {
       deletedAt: null,
     };
 
+    // 如果指定了分类，查询该分类及其所有子分类的文章
     if (categoryId) {
-      where.categoryId = categoryId;
+      const childCategories = await prisma.category.findMany({
+        where: { parentId: categoryId },
+        select: { id: true },
+      });
+      const categoryIds = [categoryId, ...childCategories.map((c: { id: string }) => c.id)];
+      where.categoryId = { in: categoryIds };
     }
 
     if (tagId) {

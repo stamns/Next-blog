@@ -91,6 +91,13 @@ export function CategoriesPage() {
             {formatDate(category.createdAt)}
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open(`/?category=${category.id}`, '_blank')}
+            >
+              预览
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => handleEdit(category)}>
               编辑
             </Button>
@@ -128,7 +135,7 @@ export function CategoriesPage() {
                 <div className="flex-1">名称</div>
                 <div className="w-20 text-center">文章数</div>
                 <div className="w-32">创建时间</div>
-                <div className="w-32">操作</div>
+                <div className="w-40">操作</div>
               </div>
               {(categories as CategoryWithChildren[]).map((category) => renderCategory(category))}
             </div>
