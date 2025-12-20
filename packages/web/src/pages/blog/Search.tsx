@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import type { Article, PaginatedResponse } from '../../types';
@@ -11,13 +12,25 @@ export function SearchPage() {
   const theme = getTheme(currentTheme);
   const { BlogLayout, SearchResults } = theme;
   const config = getConfig();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     fetchActiveTheme();
   }, [fetchActiveTheme]);
 
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  // 从 URL 参数获取初始搜索词
+  const initialQuery = searchParams.get('q') || '';
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+
+  // URL 参数变化时更新搜索词
+  useEffect(() => {
+    const urlQuery = searchParams.get('q') || '';
+    if (urlQuery && urlQuery !== query) {
+      setQuery(urlQuery);
+      setDebouncedQuery(urlQuery);
+    }
+  }, [searchParams]);
 
   const handleSearch = (value: string) => {
     setQuery(value);
