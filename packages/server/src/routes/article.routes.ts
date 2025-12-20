@@ -24,6 +24,7 @@ const updateArticleSchema = z.object({
   content: z.string().min(1).optional(),
   excerpt: z.string().optional(),
   slug: z.string().optional(),
+  featuredImage: z.string().nullable().optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'TRASHED']).optional(),
   categoryId: z.string().nullable().optional(),
   tagIds: z.array(z.string()).optional(),
