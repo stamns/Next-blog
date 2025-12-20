@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useArticle, useCreateArticle, useUpdateArticle } from '../../hooks/useArticles';
-import { useCategories } from '../../hooks/useCategories';
+import { useCategoriesFlat } from '../../hooks/useCategories';
 import { useTags, useCreateTag } from '../../hooks/useTags';
 import { Button, Input, Card, CardContent, Select, Textarea } from '../../components/ui';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
@@ -13,7 +13,7 @@ export function ArticleEditorPage() {
   const isNew = !id;
 
   const { data: article, isLoading } = useArticle(id || '');
-  const { data: categories } = useCategories();
+  const { data: categories } = useCategoriesFlat();
   const { data: tags } = useTags();
   const createTag = useCreateTag();
   const createArticle = useCreateArticle();

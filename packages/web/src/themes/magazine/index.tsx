@@ -233,21 +233,49 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
   const colors = colorSchemes[config.colorScheme] || colorSchemes.purple;
   const rounded = roundedClasses[config.roundedCorners] || roundedClasses.large;
 
+  // 基于文章 ID 生成稳定的随机渐变
   const gradients = [
     'from-violet-500 to-purple-600',
     'from-fuchsia-500 to-pink-600',
     'from-cyan-500 to-blue-600',
     'from-emerald-500 to-teal-600',
     'from-orange-500 to-red-600',
+    'from-indigo-500 to-violet-600',
+    'from-rose-500 to-pink-600',
+    'from-amber-500 to-orange-600',
+    'from-lime-500 to-green-600',
+    'from-sky-500 to-indigo-600',
   ];
-  const gradient = gradients[article.title.length % gradients.length];
+  
+  // 使用文章 ID 的哈希值来选择渐变，确保同一文章始终显示相同渐变
+  const hashCode = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  };
+  const gradient = gradients[hashCode(article.id) % gradients.length];
 
   const isSimple = config.cardStyle === 'simple';
+  const hasFeaturedImage = !!article.featuredImage;
 
   return (
     <article className={`group bg-white dark:bg-gray-900 ${rounded.card} overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2`}>
       {!isSimple && (
-        <div className={`aspect-[16/10] bg-gradient-to-br ${gradient} relative overflow-hidden`}>
+        <div className={`aspect-[16/10] relative overflow-hidden`}>
+          {hasFeaturedImage ? (
+            <img 
+              src={article.featuredImage!} 
+              alt={article.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className={`w-full h-full bg-gradient-to-br ${gradient}`}>
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-tl-full" />
+            </div>
+          )}
           <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500" />
           {article.category && (
             <div className="absolute top-4 left-4">
@@ -256,7 +284,6 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
               </span>
             </div>
           )}
-          <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-tl-full" />
         </div>
       )}
       <div className="p-6">

@@ -10,6 +10,7 @@ export interface ArticleCardProps {
     slug: string;
     excerpt?: string | null;
     content: string;
+    featuredImage?: string | null;
     publishedAt?: string | null;
     createdAt: string;
     category?: { id: string; name: string } | null;

@@ -68,9 +68,10 @@ export function ArticleDetailPage() {
     );
   }
 
-  // 使用后端返回的目录，如果没有则从内容提取
-  const flatToc = article.toc || extractTOC(article.content);
-  const toc = buildTocTree(flatToc);
+  // 使用后端返回的目录（已经是层级结构），如果没有则从内容提取并构建层级
+  const toc = article.toc && article.toc.length > 0 
+    ? article.toc 
+    : buildTocTree(extractTOC(article.content));
 
   // 使用后端渲染的 HTML，如果没有则前端渲染
   const htmlContent = article.htmlContent || renderMarkdown(article.content);

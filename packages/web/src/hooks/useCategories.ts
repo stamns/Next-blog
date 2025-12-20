@@ -9,6 +9,14 @@ export function useCategories() {
   });
 }
 
+// 获取扁平分类列表（用于文章编辑器的层级选择）
+export function useCategoriesFlat() {
+  return useQuery({
+    queryKey: ['categories', 'flat'],
+    queryFn: () => api.get<Category[]>('/categories/flat'),
+  });
+}
+
 export function useCategory(id: string) {
   return useQuery({
     queryKey: ['category', id],
