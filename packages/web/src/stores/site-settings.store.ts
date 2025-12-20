@@ -15,6 +15,9 @@ export interface SiteSettings {
   socialTwitter: string;
   socialWeibo: string;
   navMenu: string;
+  sliderEnabled: string;
+  sliderStyle: string;
+  sliderItems: string;
 }
 
 export interface NavMenuItem {
@@ -23,6 +26,16 @@ export interface NavMenuItem {
   url: string;
   type: 'internal' | 'external' | 'page';
   sortOrder: number;
+  children?: NavMenuItem[];
+}
+
+export interface SliderItem {
+  id: string;
+  title: string;
+  description?: string;
+  image: string;
+  link?: string;
+  sortOrder: number;
 }
 
 interface SiteSettingsState {
@@ -30,6 +43,9 @@ interface SiteSettingsState {
   isLoading: boolean;
   fetchSettings: () => Promise<void>;
   getNavMenu: () => NavMenuItem[];
+  getSliderItems: () => SliderItem[];
+  isSliderEnabled: () => boolean;
+  getSliderStyle: () => 'full' | 'cards' | 'minimal';
 }
 
 const defaultSettings: SiteSettings = {
@@ -46,6 +62,9 @@ const defaultSettings: SiteSettings = {
   socialTwitter: '',
   socialWeibo: '',
   navMenu: '',
+  sliderEnabled: 'true',
+  sliderStyle: 'full',
+  sliderItems: '',
 };
 
 const defaultNavMenu: NavMenuItem[] = [
@@ -82,5 +101,27 @@ export const useSiteSettingsStore = create<SiteSettingsState>((set, get) => ({
       }
     }
     return defaultNavMenu;
+  },
+
+  getSliderItems: () => {
+    const { settings } = get();
+    if (settings.sliderItems) {
+      try {
+        return JSON.parse(settings.sliderItems);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  },
+
+  isSliderEnabled: () => {
+    const { settings } = get();
+    return settings.sliderEnabled !== 'false';
+  },
+
+  getSliderStyle: () => {
+    const { settings } = get();
+    return (settings.sliderStyle as 'full' | 'cards' | 'minimal') || 'full';
   },
 }));

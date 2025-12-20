@@ -1,5 +1,5 @@
 // 极简主题 - 纯净简约，大量留白，专注阅读
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { formatDate, truncate } from '../../lib/utils';
@@ -87,6 +87,7 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   const widthClass = widthClasses[config.contentWidth] || widthClasses.narrow;
   const isLargeHeader = config.headerStyle === 'centered';
   const { settings, fetchSettings, getNavMenu } = useSiteSettingsStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -99,17 +100,18 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100">
-      <header className={`${isLargeHeader ? 'py-20' : 'py-16'} px-4`}>
+      <header className={`${isLargeHeader ? 'py-12 md:py-20' : 'py-10 md:py-16'} px-4`}>
         <div className={`${widthClass} mx-auto text-center`}>
-          <Link to="/" className={`${isLargeHeader ? 'text-5xl' : 'text-4xl'} font-extralight tracking-[0.2em] uppercase`}>
+          <Link to="/" className={`${isLargeHeader ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl'} font-extralight tracking-[0.2em] uppercase`}>
             {siteName}
           </Link>
-          <div className={`w-12 h-px bg-gray-300 dark:bg-gray-700 mx-auto ${isLargeHeader ? 'mt-8' : 'mt-6'}`} />
+          <div className={`w-12 h-px bg-gray-300 dark:bg-gray-700 mx-auto ${isLargeHeader ? 'mt-6 md:mt-8' : 'mt-4 md:mt-6'}`} />
         </div>
       </header>
 
-      <nav className={`${widthClass} mx-auto px-4 mb-16`}>
-        <div className="flex items-center justify-center gap-4 text-xs tracking-[0.1em] uppercase flex-wrap">
+      <nav className={`${widthClass} mx-auto px-4 mb-8 md:mb-16`}>
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center justify-center gap-4 text-xs tracking-[0.1em] uppercase flex-wrap">
           {navMenu.map((item, index) => (
             <span key={item.id} className="flex items-center gap-4">
               {index > 0 && <span className="text-gray-300 dark:text-gray-700">·</span>}
@@ -129,6 +131,36 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
           <span className="text-gray-300 dark:text-gray-700">·</span>
           <ThemeToggle />
         </div>
+        {/* Mobile Nav */}
+        <div className="md:hidden flex items-center justify-center gap-4">
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="text-xs tracking-[0.1em] uppercase text-gray-400"
+          >
+            {mobileMenuOpen ? '关闭' : '菜单'}
+          </button>
+          <span className="text-gray-300 dark:text-gray-700">·</span>
+          <ThemeToggle />
+        </div>
+        {mobileMenuOpen && (
+          <div className="md:hidden mt-4 flex flex-col items-center gap-3 text-xs tracking-[0.1em] uppercase">
+            {navMenu.map((item) => (
+              item.type === 'external' ? (
+                <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  {item.label}
+                </a>
+              ) : (
+                <Link key={item.id} to={item.url}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  {item.label}
+                </Link>
+              )
+            ))}
+          </div>
+        )}
       </nav>
 
       <main className={`${widthClass} mx-auto px-4 pb-24`}>{children}</main>
@@ -137,6 +169,19 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
         <div className="w-8 h-px bg-gray-200 dark:bg-gray-800 mx-auto mb-6" />
         <p className="text-xs text-gray-400 tracking-[0.1em]">{footerText}</p>
       </footer>
+
+      {/* Fixed GitHub Button */}
+      <a
+        href="https://github.com/inspoaibox/Next-blog"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 p-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full shadow-lg hover:scale-110 transition-transform"
+        aria-label="GitHub"
+      >
+        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+        </svg>
+      </a>
     </div>
   );
 }
@@ -234,16 +279,29 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
 function CategoryList({ categories, config = defaultConfig }: CategoryListProps & { config?: ThemeConfig }) {
   const fontClass = config.fontWeight === 'light' ? 'font-light' : 'font-normal';
 
+  const renderCategory = (category: any, isChild = false) => (
+    <Link
+      key={category.id}
+      to={`/?category=${category.id}`}
+      className={`flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-900 hover:text-gray-500 transition-colors group ${isChild ? 'pl-6' : ''}`}
+    >
+      <span className={fontClass}>
+        {isChild && <span className="text-gray-300 mr-2">└</span>}
+        {category.name}
+      </span>
+      <span className="text-xs text-gray-400 group-hover:text-gray-600">{category._count?.articles || 0}</span>
+    </Link>
+  );
+
   return (
     <div>
       <h1 className="text-2xl font-extralight tracking-wide text-center mb-12">分类</h1>
-      <div className="space-y-4">
+      <div className="space-y-0">
         {categories.map((category) => (
-          <Link key={category.id} to={`/?category=${category.id}`}
-            className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-900 hover:text-gray-500 transition-colors group">
-            <span className={fontClass}>{category.name}</span>
-            <span className="text-xs text-gray-400 group-hover:text-gray-600">{category._count?.articles || 0}</span>
-          </Link>
+          <div key={category.id}>
+            {renderCategory(category)}
+            {category.children?.map((child: any) => renderCategory(child, true))}
+          </div>
         ))}
       </div>
     </div>

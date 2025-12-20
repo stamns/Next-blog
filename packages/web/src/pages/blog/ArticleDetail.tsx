@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
@@ -27,6 +27,7 @@ export function ArticleDetailPage() {
   const theme = getTheme(currentTheme);
   const { BlogLayout, ArticleDetail } = theme;
   const config = getConfig();
+  const [tocOpen, setTocOpen] = useState(false);
 
   useEffect(() => {
     fetchActiveTheme();
@@ -72,8 +73,51 @@ export function ArticleDetailPage() {
   return (
     <BlogLayout config={config}>
       <div className="max-w-6xl mx-auto">
+        {/* Mobile TOC Toggle */}
+        {toc.length > 0 && (
+          <div className="lg:hidden mb-4">
+            <button
+              onClick={() => setTocOpen(!tocOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+            >
+              <span className="font-medium">目录</span>
+              <svg
+                className={`w-5 h-5 transition-transform ${tocOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {tocOpen && (
+              <nav className="mt-2 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 space-y-2 text-sm">
+                {toc.map((item, index) => (
+                  <a
+                    key={index}
+                    href={`#${item.id}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setTocOpen(false);
+                      const element = document.getElementById(item.id);
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        window.history.pushState(null, '', `#${item.id}`);
+                      }
+                    }}
+                    className="block text-gray-600 dark:text-gray-400 hover:text-primary-600 transition-colors"
+                    style={{ paddingLeft: `${(item.level - 1) * 12}px` }}
+                  >
+                    {item.text}
+                  </a>
+                ))}
+              </nav>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* 侧边栏 - 目录（左侧） */}
+          {/* 侧边栏 - 目录（左侧，仅桌面端） */}
           {toc.length > 0 && (
             <aside className="hidden lg:block lg:order-first">
               <Card className="sticky top-20">

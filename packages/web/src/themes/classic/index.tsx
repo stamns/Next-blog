@@ -1,5 +1,5 @@
 // 经典主题 - 传统两栏博客布局，温暖琥珀色调
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { formatDate, truncate } from '../../lib/utils';
@@ -89,6 +89,7 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   const colors = colorClasses[config.primaryColor] || colorClasses.amber;
   const isSidebar = config.layout === 'sidebar';
   const { settings, fetchSettings, getNavMenu } = useSiteSettingsStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -104,18 +105,18 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
     <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
       {/* 顶部横幅 */}
       <div className={`bg-gradient-to-r ${colors.gradient} text-white`}>
-        <div className="max-w-6xl mx-auto px-4 py-8 text-center">
-          <Link to="/" className="text-3xl font-serif font-bold tracking-wide">
+        <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 text-center">
+          <Link to="/" className="text-2xl md:text-3xl font-serif font-bold tracking-wide">
             📚 {siteName}
           </Link>
-          <p className="mt-2 text-white/70 text-sm">{siteDescription}</p>
+          <p className="mt-2 text-white/70 text-sm hidden md:block">{siteDescription}</p>
         </div>
       </div>
 
       {/* 导航栏 */}
       <nav className="bg-white dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6 text-sm">
+          <div className="hidden md:flex items-center gap-6 text-sm">
             {navMenu.map((item) => (
               item.type === 'external' ? (
                 <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"
@@ -130,8 +131,43 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
               )
             ))}
           </div>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-stone-600 dark:text-stone-300"
+            aria-label="菜单"
+          >
+            {mobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
           <ThemeToggle />
         </div>
+        {/* Mobile Nav */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-stone-200 dark:border-stone-700">
+            {navMenu.map((item) => (
+              item.type === 'external' ? (
+                <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700">
+                  {item.label}
+                </a>
+              ) : (
+                <Link key={item.id} to={item.url}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700">
+                  {item.label}
+                </Link>
+              )
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* 内容区域 */}
@@ -171,6 +207,19 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
           <p>{footerText}</p>
         </div>
       </footer>
+
+      {/* Fixed GitHub Button */}
+      <a
+        href="https://github.com/inspoaibox/Next-blog"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 p-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full shadow-lg hover:scale-110 transition-transform"
+        aria-label="GitHub"
+      >
+        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+        </svg>
+      </a>
     </div>
   );
 }
@@ -254,21 +303,33 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
 function CategoryList({ categories, config = defaultConfig }: CategoryListProps & { config?: ThemeConfig }) {
   const colors = colorClasses[config.primaryColor] || colorClasses.amber;
 
+  const renderCategory = (category: any, isChild = false) => (
+    <Link
+      key={category.id}
+      to={`/?category=${category.id}`}
+      className={`bg-white dark:bg-stone-800 rounded-lg p-5 border border-stone-200 dark:border-stone-700 hover:shadow-md transition-all group ${isChild ? 'ml-4' : ''}`}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className={`font-serif font-bold ${isChild ? 'text-base' : 'text-lg'} group-hover:${colors.text} transition-colors`}>
+            {isChild && <span className="text-stone-400 mr-1">└</span>}
+            {category.name}
+          </h2>
+        </div>
+        <div className={`text-xl font-bold ${colors.text}`}>{category._count?.articles || 0}</div>
+      </div>
+    </Link>
+  );
+
   return (
     <div>
       <h1 className="text-2xl font-serif font-bold mb-6 pb-4 border-b border-stone-200 dark:border-stone-700">📂 文章分类</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {categories.map((category) => (
-          <Link key={category.id} to={`/?category=${category.id}`}
-            className={`bg-white dark:bg-stone-800 rounded-lg p-5 border border-stone-200 dark:border-stone-700 hover:border-${config.primaryColor}-500 hover:shadow-md transition-all group`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className={`font-serif font-bold text-lg group-hover:${colors.text} transition-colors`}>{category.name}</h2>
-                {category.description && <p className="text-stone-500 text-sm mt-1">{category.description}</p>}
-              </div>
-              <div className={`text-2xl font-bold ${colors.text}`}>{category._count?.articles || 0}</div>
-            </div>
-          </Link>
+          <div key={category.id} className="space-y-2">
+            {renderCategory(category)}
+            {category.children?.map((child: any) => renderCategory(child, true))}
+          </div>
         ))}
       </div>
     </div>

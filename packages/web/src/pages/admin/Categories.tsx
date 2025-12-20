@@ -6,14 +6,19 @@ import {
   CardContent,
   Input,
   Modal,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
+  Select,
 } from '../../components/ui';
 import { formatDate } from '../../lib/utils';
+
+interface CategoryWithChildren {
+  id: string;
+  name: string;
+  slug: string;
+  parentId?: string | null;
+  createdAt: string;
+  children?: CategoryWithChildren[];
+  _count?: { articles: number };
+}
 
 export function CategoriesPage() {
   const { data: categories, isLoading } = useCategories();
@@ -24,6 +29,9 @@ export function CategoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', slug: '', parentId: '' });
+
+  // 获取所有顶级分类用于选择父分类
+  const topLevelCategories = categories?.filter((c: CategoryWithChildren) => !c.parentId) || [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,12 +47,12 @@ export function CategoriesPage() {
         await createCategory.mutateAsync(data);
       }
       closeModal();
-    } catch (error) {
-      console.error('保存失败:', error);
+    } catch {
+      // error handled by mutation
     }
   };
 
-  const handleEdit = (category: any) => {
+  const handleEdit = (category: CategoryWithChildren) => {
     setEditingId(category.id);
     setForm({
       name: category.name,
@@ -55,7 +63,7 @@ export function CategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('确定要删除这个分类吗？')) {
+    if (confirm('确定要删除这个分类吗？子分类将移动到上级。')) {
       await deleteCategory.mutateAsync(id);
     }
   };
@@ -64,6 +72,41 @@ export function CategoriesPage() {
     setIsModalOpen(false);
     setEditingId(null);
     setForm({ name: '', slug: '', parentId: '' });
+  };
+
+  const renderCategory = (category: CategoryWithChildren, level = 0) => {
+    const hasChildren = category.children && category.children.length > 0;
+    return (
+      <div key={category.id}>
+        <div className={`flex items-center gap-4 p-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${level > 0 ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''}`}>
+          <div className="flex-1 flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
+            {level > 0 && <span className="text-gray-400">└</span>}
+            <span className="font-medium">{category.name}</span>
+            <span className="text-xs text-gray-400">({category.slug})</span>
+          </div>
+          <div className="text-sm text-gray-500 w-20 text-center">
+            {category._count?.articles || 0} 篇
+          </div>
+          <div className="text-sm text-gray-500 w-32">
+            {formatDate(category.createdAt)}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => handleEdit(category)}>
+              编辑
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDelete(category.id)}
+              className="text-red-600"
+            >
+              删除
+            </Button>
+          </div>
+        </div>
+        {hasChildren && category.children!.map((child) => renderCategory(child, level + 1))}
+      </div>
+    );
   };
 
   return (
@@ -80,42 +123,15 @@ export function CategoriesPage() {
           ) : !categories?.length ? (
             <div className="p-8 text-center text-gray-500">暂无分类</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>名称</TableHead>
-                  <TableHead>别名</TableHead>
-                  <TableHead>文章数</TableHead>
-                  <TableHead>创建时间</TableHead>
-                  <TableHead>操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell className="text-gray-500">{category.slug}</TableCell>
-                    <TableCell>{category._count?.articles || 0}</TableCell>
-                    <TableCell>{formatDate(category.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(category)}>
-                          编辑
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(category.id)}
-                          className="text-red-600"
-                        >
-                          删除
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div>
+              <div className="flex items-center gap-4 p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-medium text-gray-600 dark:text-gray-400">
+                <div className="flex-1">名称</div>
+                <div className="w-20 text-center">文章数</div>
+                <div className="w-32">创建时间</div>
+                <div className="w-32">操作</div>
+              </div>
+              {(categories as CategoryWithChildren[]).map((category) => renderCategory(category))}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -133,6 +149,17 @@ export function CategoriesPage() {
             value={form.slug}
             onChange={(e) => setForm({ ...form, slug: e.target.value })}
             placeholder="留空自动生成"
+          />
+          <Select
+            label="父分类"
+            value={form.parentId}
+            onChange={(e) => setForm({ ...form, parentId: e.target.value })}
+            options={[
+              { value: '', label: '无（顶级分类）' },
+              ...topLevelCategories
+                .filter((c: CategoryWithChildren) => c.id !== editingId)
+                .map((c: CategoryWithChildren) => ({ value: c.id, label: c.name })),
+            ]}
           />
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={closeModal}>

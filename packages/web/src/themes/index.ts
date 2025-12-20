@@ -41,6 +41,12 @@ export interface CategoryListProps {
     slug: string;
     description?: string | null;
     _count?: { articles: number };
+    children?: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      _count?: { articles: number };
+    }>;
   }>;
 }
 

@@ -22,7 +22,7 @@ import {
 } from '../../components/ui';
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'site' | 'menu' | 'security' | 'ai' | 'theme' | 'plugin'>('site');
+  const [activeTab, setActiveTab] = useState<'site' | 'menu' | 'slider' | 'security' | 'ai' | 'theme' | 'plugin' | 'help'>('site');
 
   return (
     <div>
@@ -32,10 +32,12 @@ export function SettingsPage() {
         {[
           { key: 'site', label: '网站设置' },
           { key: 'menu', label: '菜单管理' },
+          { key: 'slider', label: '幻灯片' },
           { key: 'security', label: '安全设置' },
           { key: 'ai', label: 'AI 模型' },
           { key: 'theme', label: '主题设置' },
           { key: 'plugin', label: '插件管理' },
+          { key: 'help', label: '帮助中心' },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -53,10 +55,12 @@ export function SettingsPage() {
 
       {activeTab === 'site' && <SiteSettings />}
       {activeTab === 'menu' && <MenuSettings />}
+      {activeTab === 'slider' && <SliderSettings />}
       {activeTab === 'security' && <SecuritySettings />}
       {activeTab === 'ai' && <AIModelSettings />}
       {activeTab === 'theme' && <ThemeSettings />}
       {activeTab === 'plugin' && <PluginSettings />}
+      {activeTab === 'help' && <HelpCenter />}
     </div>
   );
 }
@@ -789,6 +793,7 @@ interface MenuItem {
   url: string;
   type: 'internal' | 'external' | 'page';
   sortOrder: number;
+  children?: MenuItem[];
 }
 
 function MenuSettings() {
@@ -817,6 +822,7 @@ function MenuSettings() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenu);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [parentId, setParentId] = useState<string | null>(null);
   const [form, setForm] = useState({ label: '', url: '', type: 'internal' as MenuItem['type'] });
 
   useEffect(() => {
@@ -848,52 +854,142 @@ function MenuSettings() {
     updateSettings.mutate({ navMenu: JSON.stringify(menuItems) });
   };
 
-  const handleAdd = () => {
+  const handleAdd = (parentItemId?: string) => {
     setEditingItem(null);
+    setParentId(parentItemId || null);
     setForm({ label: '', url: '', type: 'internal' });
     setIsModalOpen(true);
   };
 
-  const handleEdit = (item: MenuItem) => {
+  const handleEdit = (item: MenuItem, parentItemId?: string) => {
     setEditingItem(item);
+    setParentId(parentItemId || null);
     setForm({ label: item.label, url: item.url, type: item.type });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setMenuItems(menuItems.filter(item => item.id !== id));
+  const handleDelete = (id: string, parentItemId?: string) => {
+    if (parentItemId) {
+      setMenuItems(menuItems.map(item => 
+        item.id === parentItemId 
+          ? { ...item, children: item.children?.filter(c => c.id !== id) }
+          : item
+      ));
+    } else {
+      setMenuItems(menuItems.filter(item => item.id !== id));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingItem) {
-      setMenuItems(menuItems.map(item => 
-        item.id === editingItem.id 
-          ? { ...item, ...form }
-          : item
-      ));
+    const newItem: MenuItem = {
+      id: editingItem?.id || Date.now().toString(),
+      ...form,
+      sortOrder: 0,
+    };
+
+    if (parentId) {
+      // 添加/编辑子菜单
+      setMenuItems(menuItems.map(item => {
+        if (item.id === parentId) {
+          if (editingItem) {
+            return {
+              ...item,
+              children: item.children?.map(c => c.id === editingItem.id ? newItem : c),
+            };
+          } else {
+            return {
+              ...item,
+              children: [...(item.children || []), newItem],
+            };
+          }
+        }
+        return item;
+      }));
     } else {
-      const newItem: MenuItem = {
-        id: Date.now().toString(),
-        ...form,
-        sortOrder: menuItems.length,
-      };
-      setMenuItems([...menuItems, newItem]);
+      // 添加/编辑顶级菜单
+      if (editingItem) {
+        setMenuItems(menuItems.map(item => 
+          item.id === editingItem.id ? { ...item, ...form } : item
+        ));
+      } else {
+        setMenuItems([...menuItems, { ...newItem, sortOrder: menuItems.length }]);
+      }
     }
     setIsModalOpen(false);
   };
 
-  const moveItem = (index: number, direction: 'up' | 'down') => {
-    const newItems = [...menuItems];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newItems.length) return;
-    [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
-    newItems.forEach((item, i) => item.sortOrder = i);
-    setMenuItems(newItems);
+  const moveItem = (index: number, direction: 'up' | 'down', parentItemId?: string) => {
+    if (parentItemId) {
+      setMenuItems(menuItems.map(item => {
+        if (item.id === parentItemId && item.children) {
+          const newChildren = [...item.children];
+          const targetIndex = direction === 'up' ? index - 1 : index + 1;
+          if (targetIndex < 0 || targetIndex >= newChildren.length) return item;
+          [newChildren[index], newChildren[targetIndex]] = [newChildren[targetIndex], newChildren[index]];
+          return { ...item, children: newChildren };
+        }
+        return item;
+      }));
+    } else {
+      const newItems = [...menuItems];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= newItems.length) return;
+      [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
+      newItems.forEach((item, i) => item.sortOrder = i);
+      setMenuItems(newItems);
+    }
   };
 
   // 显示在导航的页面
   const navPages = pages?.filter(p => p.showInNav) || [];
+
+  const renderMenuItem = (item: MenuItem, index: number, parentItemId?: string) => (
+    <div key={item.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+      <div className={`flex items-center gap-4 p-3 ${parentItemId ? 'pl-10 bg-gray-50/50 dark:bg-gray-800/30' : 'bg-gray-50 dark:bg-gray-800'} rounded-lg`}>
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => moveItem(index, 'up', parentItemId)}
+            disabled={index === 0}
+            className="text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs"
+          >
+            ▲
+          </button>
+          <button
+            onClick={() => moveItem(index, 'down', parentItemId)}
+            disabled={index === (parentItemId ? menuItems.find(m => m.id === parentItemId)?.children?.length || 0 : menuItems.length) - 1}
+            className="text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs"
+          >
+            ▼
+          </button>
+        </div>
+        <div className="flex-1">
+          <div className="font-medium flex items-center gap-2">
+            {parentItemId && <span className="text-gray-400">└</span>}
+            {item.label}
+          </div>
+          <div className="text-sm text-gray-500">{item.url}</div>
+        </div>
+        <Badge variant={item.type === 'external' ? 'warning' : 'default'}>
+          {item.type === 'internal' ? '内部' : item.type === 'external' ? '外部' : '页面'}
+        </Badge>
+        <div className="flex gap-2">
+          {!parentItemId && (
+            <Button variant="ghost" size="sm" onClick={() => handleAdd(item.id)}>
+              添加子菜单
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => handleEdit(item, parentItemId)}>编辑</Button>
+          <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete(item.id, parentItemId)}>删除</Button>
+        </div>
+      </div>
+      {item.children && item.children.length > 0 && (
+        <div className="ml-4">
+          {item.children.map((child, childIndex) => renderMenuItem(child, childIndex, item.id))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -910,46 +1006,19 @@ function MenuSettings() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">导航菜单</h2>
+            <div>
+              <h2 className="text-lg font-semibold">导航菜单</h2>
+              <p className="text-sm text-gray-500 mt-1">支持二级菜单，点击"添加子菜单"创建下拉菜单</p>
+            </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleAdd}>添加菜单项</Button>
+              <Button variant="outline" onClick={() => handleAdd()}>添加菜单项</Button>
               <Button onClick={handleSave} loading={updateSettings.isPending}>保存菜单</Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {menuItems.map((item, index) => (
-              <div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="flex flex-col gap-1">
-                  <button
-                    onClick={() => moveItem(index, 'up')}
-                    disabled={index === 0}
-                    className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    onClick={() => moveItem(index, 'down')}
-                    disabled={index === menuItems.length - 1}
-                    className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                  >
-                    ▼
-                  </button>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium">{item.label}</div>
-                  <div className="text-sm text-gray-500">{item.url}</div>
-                </div>
-                <Badge variant={item.type === 'external' ? 'warning' : 'default'}>
-                  {item.type === 'internal' ? '内部链接' : item.type === 'external' ? '外部链接' : '页面'}
-                </Badge>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>编辑</Button>
-                  <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete(item.id)}>删除</Button>
-                </div>
-              </div>
-            ))}
+            {menuItems.map((item, index) => renderMenuItem(item, index))}
           </div>
         </CardContent>
       </Card>
@@ -996,7 +1065,7 @@ function MenuSettings() {
         </p>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? '编辑菜单项' : '添加菜单项'}>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? '编辑菜单项' : (parentId ? '添加子菜单' : '添加菜单项')}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label="显示名称"
@@ -1027,6 +1096,486 @@ function MenuSettings() {
           </div>
         </form>
       </Modal>
+    </div>
+  );
+}
+
+
+// 幻灯片设置
+interface SliderItem {
+  id: string;
+  title: string;
+  description?: string;
+  image: string;
+  link?: string;
+  sortOrder: number;
+}
+
+function SliderSettings() {
+  const queryClient = useQueryClient();
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  const { data: settings } = useQuery({
+    queryKey: ['site-settings'],
+    queryFn: () => api.get<Record<string, string>>('/settings'),
+  });
+
+  const [sliderEnabled, setSliderEnabled] = useState(true);
+  const [sliderStyle, setSliderStyle] = useState<'full' | 'cards' | 'minimal'>('full');
+  const [sliderItems, setSliderItems] = useState<SliderItem[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<SliderItem | null>(null);
+  const [form, setForm] = useState({ title: '', description: '', image: '', link: '' });
+
+  useEffect(() => {
+    if (settings) {
+      setSliderEnabled(settings.sliderEnabled !== 'false');
+      setSliderStyle((settings.sliderStyle as 'full' | 'cards' | 'minimal') || 'full');
+      if (settings.sliderItems) {
+        try {
+          setSliderItems(JSON.parse(settings.sliderItems));
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, [settings]);
+
+  const updateSettings = useMutation({
+    mutationFn: (data: Record<string, string>) => api.put('/settings', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-settings'] });
+      setMessage({ type: 'success', text: '幻灯片设置保存成功' });
+      setTimeout(() => setMessage(null), 3000);
+    },
+    onError: (error: any) => {
+      setMessage({ type: 'error', text: error.message || '保存失败' });
+    },
+  });
+
+  const handleSave = () => {
+    updateSettings.mutate({
+      sliderEnabled: String(sliderEnabled),
+      sliderStyle,
+      sliderItems: JSON.stringify(sliderItems),
+    });
+  };
+
+  const handleAdd = () => {
+    setEditingItem(null);
+    setForm({ title: '', description: '', image: '', link: '' });
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (item: SliderItem) => {
+    setEditingItem(item);
+    setForm({ title: item.title, description: item.description || '', image: item.image, link: item.link || '' });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    setSliderItems(sliderItems.filter(item => item.id !== id));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingItem) {
+      setSliderItems(sliderItems.map(item => 
+        item.id === editingItem.id ? { ...item, ...form } : item
+      ));
+    } else {
+      setSliderItems([...sliderItems, {
+        id: Date.now().toString(),
+        ...form,
+        sortOrder: sliderItems.length,
+      }]);
+    }
+    setIsModalOpen(false);
+  };
+
+  const moveItem = (index: number, direction: 'up' | 'down') => {
+    const newItems = [...sliderItems];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newItems.length) return;
+    [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
+    setSliderItems(newItems);
+  };
+
+  return (
+    <div className="space-y-6">
+      {message && (
+        <div className={`p-3 rounded-lg ${
+          message.type === 'success'
+            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+        }`}>
+          {message.text}
+        </div>
+      )}
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">首页幻灯片</h2>
+              <p className="text-sm text-gray-500 mt-1">设置首页顶部的轮播海报</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleAdd}>添加幻灯片</Button>
+              <Button onClick={handleSave} loading={updateSettings.isPending}>保存设置</Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sliderEnabled}
+                onChange={(e) => setSliderEnabled(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>启用幻灯片</span>
+            </label>
+            <Select
+              label="展示样式"
+              value={sliderStyle}
+              onChange={(e) => setSliderStyle(e.target.value as 'full' | 'cards' | 'minimal')}
+              options={[
+                { value: 'full', label: '全宽轮播' },
+                { value: 'cards', label: '卡片网格' },
+                { value: 'minimal', label: '简约横幅' },
+              ]}
+            />
+          </div>
+
+          {sliderItems.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              暂无幻灯片，点击"添加幻灯片"开始创建
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sliderItems.map((item, index) => (
+                <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex flex-col gap-1">
+                    <button onClick={() => moveItem(index, 'up')} disabled={index === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">▲</button>
+                    <button onClick={() => moveItem(index, 'down')} disabled={index === sliderItems.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">▼</button>
+                  </div>
+                  <div className="w-24 h-16 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex-shrink-0">
+                    {item.image && <img src={item.image} alt={item.title} className="w-full h-full object-cover" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{item.title}</div>
+                    {item.description && <div className="text-sm text-gray-500 truncate">{item.description}</div>}
+                    {item.link && <div className="text-xs text-primary-600 truncate">{item.link}</div>}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>编辑</Button>
+                    <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete(item.id)}>删除</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? '编辑幻灯片' : '添加幻灯片'}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input label="标题" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+          <Textarea label="描述（可选）" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Input label="图片地址" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://example.com/image.jpg" required />
+          <Input label="链接地址（可选）" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} placeholder="点击跳转的链接" />
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>取消</Button>
+            <Button type="submit">保存</Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+// 帮助中心
+function HelpCenter() {
+  const [activeSection, setActiveSection] = useState<'theme' | 'plugin'>('theme');
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold">开发者文档</h2>
+          <p className="text-sm text-gray-500">了解如何开发自定义主题和插件</p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setActiveSection('theme')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activeSection === 'theme' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'bg-gray-100 dark:bg-gray-700'
+              }`}
+            >
+              主题开发
+            </button>
+            <button
+              onClick={() => setActiveSection('plugin')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activeSection === 'plugin' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'bg-gray-100 dark:bg-gray-700'
+              }`}
+            >
+              插件开发
+            </button>
+          </div>
+
+          {activeSection === 'theme' && (
+            <div className="prose dark:prose-invert max-w-none">
+              <h3>主题开发指南</h3>
+              <p>NextBlog 支持自定义主题，每个主题是一个独立的 React 组件集合。</p>
+              
+              <h4>1. 主题结构</h4>
+              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+{`packages/web/src/themes/your-theme/
+├── index.tsx      # 主题入口文件
+└── styles.css     # 可选的样式文件`}
+              </pre>
+
+              <h4>2. 主题接口</h4>
+              <p>每个主题需要导出以下组件：</p>
+              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+{`export interface ThemeComponents {
+  name: string;           // 主题标识
+  displayName: string;    // 显示名称
+  description: string;    // 主题描述
+  configOptions: ThemeConfigOption[];  // 配置选项
+  defaultConfig: ThemeConfig;          // 默认配置
+  BlogLayout: React.FC;   // 布局组件
+  ArticleCard: React.FC;  // 文章卡片
+  ArticleDetail: React.FC; // 文章详情
+  CategoryList: React.FC; // 分类列表
+  TagList: React.FC;      // 标签列表
+  SearchResults: React.FC; // 搜索结果
+}`}
+              </pre>
+
+              <h4>3. 配置选项</h4>
+              <p>主题可以定义可配置的选项，用户可以在后台自定义：</p>
+              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+{`const configOptions: ThemeConfigOption[] = [
+  {
+    key: 'primaryColor',
+    label: '主题色',
+    type: 'select',
+    options: [
+      { value: 'blue', label: '蓝色' },
+      { value: 'green', label: '绿色' },
+    ],
+    default: 'blue',
+    description: '主题的主要颜色',
+  },
+  {
+    key: 'showSidebar',
+    label: '显示侧边栏',
+    type: 'boolean',
+    default: true,
+  },
+];`}
+              </pre>
+
+              <h4>4. 注册主题</h4>
+              <p>在 <code>packages/web/src/themes/index.ts</code> 中注册你的主题：</p>
+              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+{`import { YourTheme } from './your-theme';
+
+export const themes: Record<string, ThemeComponents> = {
+  classic: ClassicTheme,
+  minimal: MinimalTheme,
+  magazine: MagazineTheme,
+  'your-theme': YourTheme,  // 添加你的主题
+};`}
+              </pre>
+
+              <h4>5. 示例主题</h4>
+              <p>参考现有主题的实现：</p>
+              <ul>
+                <li><code>classic</code> - 经典两栏布局</li>
+                <li><code>minimal</code> - 极简风格</li>
+                <li><code>magazine</code> - 杂志风格</li>
+              </ul>
+            </div>
+          )}
+
+          {activeSection === 'plugin' && (
+            <div className="prose dark:prose-invert max-w-none">
+              <h3>插件开发指南</h3>
+              <p>NextBlog 插件系统允许你扩展博客功能。</p>
+              
+              <h4>1. 插件结构</h4>
+              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+{`plugins/your-plugin/
+├── package.json   # 插件元信息
+├── index.ts       # 插件入口
+├── server/        # 后端代码（可选）
+│   └── routes.ts
+└── client/        # 前端代码（可选）
+    └── components.tsx`}
+              </pre>
+
+              <h4>2. 插件元信息 (package.json)</h4>
+              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+{`{
+  "name": "your-plugin",
+  "version": "1.0.0",
+  "description": "插件描述",
+  "main": "index.ts",
+  "nextblog": {
+    "hooks": ["beforePublish", "afterPublish"],
+    "settings": [
+      {
+        "key": "apiKey",
+        "label": "API Key",
+        "type": "string"
+      }
+    ]
+  }
+}`}
+              </pre>
+
+              <h4>3. 可用钩子</h4>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left p-2 border-b">钩子名称</th>
+                    <th className="text-left p-2 border-b">触发时机</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className="p-2 border-b">beforePublish</td><td className="p-2 border-b">文章发布前</td></tr>
+                  <tr><td className="p-2 border-b">afterPublish</td><td className="p-2 border-b">文章发布后</td></tr>
+                  <tr><td className="p-2 border-b">beforeSave</td><td className="p-2 border-b">保存前</td></tr>
+                  <tr><td className="p-2 border-b">afterSave</td><td className="p-2 border-b">保存后</td></tr>
+                  <tr><td className="p-2 border-b">onComment</td><td className="p-2 border-b">收到评论时</td></tr>
+                  <tr><td className="p-2 border-b">onPageView</td><td className="p-2 border-b">页面访问时</td></tr>
+                </tbody>
+              </table>
+
+              <h4>4. 插件入口示例</h4>
+              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+{`// index.ts
+export default {
+  name: 'your-plugin',
+  
+  // 插件激活时调用
+  activate(context) {
+    console.log('Plugin activated');
+  },
+  
+  // 插件停用时调用
+  deactivate() {
+    console.log('Plugin deactivated');
+  },
+  
+  // 钩子处理
+  hooks: {
+    async beforePublish(article) {
+      // 在文章发布前执行
+      return article;
+    },
+    
+    async afterPublish(article) {
+      // 在文章发布后执行
+      // 例如：推送到第三方平台
+    },
+  },
+};`}
+              </pre>
+
+              <h4>5. 添加后端路由</h4>
+              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+{`// server/routes.ts
+import { Router } from 'express';
+
+export function registerRoutes(router: Router) {
+  router.get('/your-plugin/data', async (req, res) => {
+    res.json({ message: 'Hello from plugin' });
+  });
+}`}
+              </pre>
+
+              <h4>6. 安装插件</h4>
+              <p>将插件文件夹放入 <code>plugins/</code> 目录，然后在后台"插件管理"中启用。</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold">常见问题</h2>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <details className="group">
+              <summary className="cursor-pointer font-medium p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">如何备份数据？</summary>
+              <div className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                数据库文件位于 <code>packages/server/prisma/dev.db</code>（开发环境）或 <code>prod.db</code>（生产环境）。
+                定期复制此文件即可完成备份。上传的媒体文件位于 <code>packages/server/uploads/</code> 目录。
+              </div>
+            </details>
+            <details className="group">
+              <summary className="cursor-pointer font-medium p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">如何修改端口？</summary>
+              <div className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                修改 <code>packages/server/.env</code> 中的 <code>PORT</code> 变量，以及 <code>packages/web/vite.config.ts</code> 中的代理配置。
+              </div>
+            </details>
+            <details className="group">
+              <summary className="cursor-pointer font-medium p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">如何配置反向代理？</summary>
+              <div className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                参考 <code>docs/DEPLOYMENT.md</code> 中的 Nginx 或 Caddy 配置示例。记得设置 <code>ALLOWED_ORIGINS</code> 环境变量。
+              </div>
+            </details>
+            <details className="group">
+              <summary className="cursor-pointer font-medium p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">忘记管理员密码怎么办？</summary>
+              <div className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                运行 <code>npm run db:seed</code> 重置管理员账户为默认密码 <code>admin123</code>。
+              </div>
+            </details>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold">相关链接</h2>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="https://github.com/inspoaibox/Next-blog" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <span className="text-2xl">📦</span>
+              <div>
+                <div className="font-medium">GitHub 仓库</div>
+                <div className="text-sm text-gray-500">查看源代码</div>
+              </div>
+            </a>
+            <a href="https://github.com/inspoaibox/Next-blog/issues" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <span className="text-2xl">🐛</span>
+              <div>
+                <div className="font-medium">问题反馈</div>
+                <div className="text-sm text-gray-500">报告 Bug 或建议</div>
+              </div>
+            </a>
+            <a href="https://github.com/inspoaibox/Next-blog/discussions" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <span className="text-2xl">💬</span>
+              <div>
+                <div className="font-medium">社区讨论</div>
+                <div className="text-sm text-gray-500">交流与分享</div>
+              </div>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

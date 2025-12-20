@@ -4,7 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import type { Article, PaginatedResponse } from '../../types';
 import { Pagination } from '../../components/ui';
+import { Slider } from '../../components/Slider';
 import { useBlogThemeStore } from '../../stores/blog-theme.store';
+import { useSiteSettingsStore } from '../../stores/site-settings.store';
 import { getTheme } from '../../themes';
 
 export function ArticleListPage() {
@@ -14,13 +16,15 @@ export function ArticleListPage() {
   const tagId = searchParams.get('tag') || '';
 
   const { currentTheme, fetchActiveTheme, getConfig } = useBlogThemeStore();
+  const { fetchSettings, getSliderItems, isSliderEnabled, getSliderStyle } = useSiteSettingsStore();
   const theme = getTheme(currentTheme);
   const { BlogLayout, ArticleCard } = theme;
   const config = getConfig();
 
   useEffect(() => {
     fetchActiveTheme();
-  }, [fetchActiveTheme]);
+    fetchSettings();
+  }, [fetchActiveTheme, fetchSettings]);
 
   const params = new URLSearchParams();
   params.set('page', String(page));
@@ -53,9 +57,15 @@ export function ArticleListPage() {
     ? `grid grid-cols-1 ${gridColsMap[gridColumns] || gridColsMap['3']} gap-6`
     : articlesPerRow === '2' ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'space-y-6';
 
+  const sliderItems = getSliderItems();
+  const showSlider = isSliderEnabled() && sliderItems.length > 0 && page === 1 && !categoryId && !tagId;
+
   return (
     <BlogLayout config={config}>
       <div className={currentTheme === 'magazine' ? '' : ''}>
+        {/* 幻灯片 */}
+        {showSlider && <Slider items={sliderItems} style={getSliderStyle()} />}
+
         <h1 className="text-3xl font-bold mb-8">文章列表</h1>
 
         {isLoading ? (

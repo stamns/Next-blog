@@ -1,5 +1,5 @@
 // 杂志主题 - 大图卡片网格，紫粉渐变，现代视觉
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { formatDate, truncate } from '../../lib/utils';
@@ -123,6 +123,7 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   const colors = colorSchemes[config.colorScheme] || colorSchemes.purple;
   const rounded = roundedClasses[config.roundedCorners] || roundedClasses.large;
   const { settings, fetchSettings, getNavMenu } = useSiteSettingsStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -136,10 +137,10 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className={`w-10 h-10 bg-gradient-to-br ${colors.gradient} ${rounded.button} flex items-center justify-center text-white font-bold text-lg`}>{siteName[0]}</div>
-            <span className={`text-xl font-bold bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>{siteName}</span>
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 md:gap-3">
+            <div className={`w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br ${colors.gradient} ${rounded.button} flex items-center justify-center text-white font-bold text-sm md:text-lg`}>{siteName[0]}</div>
+            <span className={`text-lg md:text-xl font-bold bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>{siteName}</span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {navMenu.map((item) => (
@@ -156,14 +157,51 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
               )
             ))}
           </nav>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-gray-600 dark:text-gray-400"
+              aria-label="菜单"
+            >
+              {mobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
+        {/* Mobile Nav */}
+        {mobileMenuOpen && (
+          <nav className="md:hidden border-t border-gray-200/50 dark:border-gray-800/50 bg-white dark:bg-gray-900">
+            {navMenu.map((item) => (
+              item.type === 'external' ? (
+                <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+                  {item.label}
+                </a>
+              ) : (
+                <Link key={item.id} to={item.url}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+                  {item.label}
+                </Link>
+              )
+            ))}
+          </nav>
+        )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">{children}</main>
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">{children}</main>
 
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="max-w-7xl mx-auto px-6 text-center">
+      <footer className="bg-gray-900 text-gray-400 py-8 md:py-12">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className={`w-8 h-8 bg-gradient-to-br ${colors.gradient} ${rounded.button} flex items-center justify-center text-white font-bold text-sm`}>{siteName[0]}</div>
             <span className="font-bold text-white">{siteName}</span>
@@ -171,6 +209,19 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
           <p className="text-sm">{footerText}</p>
         </div>
       </footer>
+
+      {/* Fixed GitHub Button */}
+      <a
+        href="https://github.com/inspoaibox/Next-blog"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 p-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full shadow-lg hover:scale-110 transition-transform"
+        aria-label="GitHub"
+      >
+        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+        </svg>
+      </a>
     </div>
   );
 }
@@ -311,6 +362,15 @@ function CategoryList({ categories, config = defaultConfig }: CategoryListProps 
     'from-indigo-500 to-violet-600',
   ];
 
+  // 展平分类（包含子分类）
+  const flatCategories: { category: any; isChild: boolean; parentIndex: number }[] = [];
+  categories.forEach((category, index) => {
+    flatCategories.push({ category, isChild: false, parentIndex: index });
+    category.children?.forEach((child: any) => {
+      flatCategories.push({ category: child, isChild: true, parentIndex: index });
+    });
+  });
+
   return (
     <div>
       <div className="text-center mb-12">
@@ -318,14 +378,19 @@ function CategoryList({ categories, config = defaultConfig }: CategoryListProps 
         <p className="text-gray-500 mt-2">探索不同领域的精彩内容</p>
       </div>
       <div className={`grid grid-cols-1 ${gridClass} gap-6`}>
-        {categories.map((category, index) => (
-          <Link key={category.id} to={`/?category=${category.id}`}
-            className={`bg-gradient-to-br ${gradients[index % gradients.length]} ${rounded.card} p-6 text-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300`}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">{category.name}</h2>
-              <span className="text-3xl font-black opacity-50">{category._count?.articles || 0}</span>
+        {flatCategories.map(({ category, isChild, parentIndex }) => (
+          <Link
+            key={category.id}
+            to={`/?category=${category.id}`}
+            className={`bg-gradient-to-br ${gradients[parentIndex % gradients.length]} ${rounded.card} ${isChild ? 'p-4 opacity-90' : 'p-6'} text-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h2 className={`${isChild ? 'text-base' : 'text-xl'} font-bold`}>
+                {isChild && <span className="opacity-60 mr-1">└</span>}
+                {category.name}
+              </h2>
+              <span className={`${isChild ? 'text-xl' : 'text-3xl'} font-black opacity-50`}>{category._count?.articles || 0}</span>
             </div>
-            {category.description && <p className="text-white/80 text-sm">{category.description}</p>}
           </Link>
         ))}
       </div>
