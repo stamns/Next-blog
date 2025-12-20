@@ -22,7 +22,9 @@ import {
 } from '../../components/ui';
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'site' | 'menu' | 'slider' | 'security' | 'ai' | 'theme' | 'plugin' | 'help'>('site');
+  const [activeTab, setActiveTab] = useState<
+    'site' | 'menu' | 'slider' | 'seo' | 'security' | 'ai' | 'theme' | 'plugin' | 'help'
+  >('site');
 
   return (
     <div>
@@ -33,6 +35,7 @@ export function SettingsPage() {
           { key: 'site', label: '网站设置' },
           { key: 'menu', label: '菜单管理' },
           { key: 'slider', label: '幻灯片' },
+          { key: 'seo', label: 'SEO 优化' },
           { key: 'security', label: '安全设置' },
           { key: 'ai', label: 'AI 模型' },
           { key: 'theme', label: '主题设置' },
@@ -56,6 +59,7 @@ export function SettingsPage() {
       {activeTab === 'site' && <SiteSettings />}
       {activeTab === 'menu' && <MenuSettings />}
       {activeTab === 'slider' && <SliderSettings />}
+      {activeTab === 'seo' && <SEOSettings />}
       {activeTab === 'security' && <SecuritySettings />}
       {activeTab === 'ai' && <AIModelSettings />}
       {activeTab === 'theme' && <ThemeSettings />}
@@ -1352,6 +1356,93 @@ function SliderSettings() {
           </div>
         </form>
       </Modal>
+    </div>
+  );
+}
+
+// SEO 优化设置
+function SEOSettings() {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleGenerateAll = async () => {
+    setIsGenerating(true);
+    setMessage(null);
+    try {
+      const response = await api.post<{ success: number; failed: number; message: string }>(
+        '/prerender/all'
+      );
+      setMessage({ type: 'success', text: response.message });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || '生成失败' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold">静态页面生成</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            为所有已发布文章生成静态 HTML 页面，提升 SEO 效果和首屏加载速度
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {message && (
+            <div
+              className={`p-3 rounded-lg ${
+                message.type === 'success'
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+              }`}
+            >
+              {message.text}
+            </div>
+          )}
+
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <h3 className="font-medium mb-2">工作原理</h3>
+            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <li>• 为每篇已发布文章生成独立的 HTML 文件</li>
+              <li>• 搜索引擎爬虫可以直接读取完整内容</li>
+              <li>• 文章发布/更新时会自动重新生成对应页面</li>
+              <li>• 静态页面存储在 dist/article/ 目录下</li>
+            </ul>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button onClick={handleGenerateAll} loading={isGenerating}>
+              {isGenerating ? '正在生成...' : '重新生成所有静态页'}
+            </Button>
+            <span className="text-sm text-gray-500">
+              首次使用或批量更新后建议执行
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold">SEO 说明</h2>
+        </CardHeader>
+        <CardContent>
+          <div className="prose dark:prose-invert max-w-none text-sm">
+            <p>静态页面包含以下 SEO 优化：</p>
+            <ul>
+              <li>完整的 meta 标签（title, description, keywords）</li>
+              <li>Open Graph 标签（社交分享优化）</li>
+              <li>Twitter Card 标签</li>
+              <li>JSON-LD 结构化数据（Schema.org）</li>
+              <li>语义化 HTML 结构</li>
+            </ul>
+            <p className="mt-4">
+              <strong>注意：</strong>Caddy 配置需要支持 try_files，优先返回静态 HTML 文件。
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

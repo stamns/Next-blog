@@ -15,6 +15,7 @@ import aiRoutes from './routes/ai.routes.js';
 import themeRoutes from './routes/theme.routes.js';
 import pluginRoutes from './routes/plugin.routes.js';
 import settingRoutes from './routes/setting.routes.js';
+import prerenderRoutes from './routes/prerender.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3012;
@@ -59,6 +60,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/themes', themeRoutes);
 app.use('/api/plugins', pluginRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/prerender', prerenderRoutes);
 
 // Error handler
 app.use(errorHandler);

@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { articleService } from '../services/article.service.js';
 import { markdownService } from '../services/markdown.service.js';
+import { prerenderService } from '../services/prerender.service.js';
 import { authenticate, AuthRequest, optionalAuth } from '../middleware/auth.js';
 import { createError } from '../middleware/errorHandler.js';
 
@@ -152,6 +153,11 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response, next) => 
       authorId: req.user!.userId,
     });
 
+    // 自动生成静态页面（已发布状态）
+    if (article.status === 'PUBLISHED') {
+      prerenderService.renderArticle(article.slug).catch(() => {});
+    }
+
     res.status(201).json({
       success: true,
       data: article,
@@ -173,6 +179,14 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response, next) =
     const input = updateArticleSchema.parse(req.body);
 
     const article = await articleService.update(req.params.id, input);
+
+    // 自动更新静态页面
+    if (article.status === 'PUBLISHED') {
+      prerenderService.renderArticle(article.slug).catch(() => {});
+    } else {
+      // 非发布状态则删除静态页面
+      prerenderService.deleteArticlePage(article.slug).catch(() => {});
+    }
 
     res.json({
       success: true,
