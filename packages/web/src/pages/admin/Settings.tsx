@@ -1333,7 +1333,7 @@ function HelpCenter() {
               <p>NextBlog 支持自定义主题，每个主题是一个独立的 React 组件集合。</p>
               
               <h4>1. 主题结构</h4>
-              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`packages/web/src/themes/your-theme/
 ├── index.tsx      # 主题入口文件
 └── styles.css     # 可选的样式文件`}
@@ -1341,7 +1341,7 @@ function HelpCenter() {
 
               <h4>2. 主题接口</h4>
               <p>每个主题需要导出以下组件：</p>
-              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`export interface ThemeComponents {
   name: string;           // 主题标识
   displayName: string;    // 显示名称
@@ -1359,7 +1359,7 @@ function HelpCenter() {
 
               <h4>3. 配置选项</h4>
               <p>主题可以定义可配置的选项，用户可以在后台自定义：</p>
-              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`const configOptions: ThemeConfigOption[] = [
   {
     key: 'primaryColor',
@@ -1383,7 +1383,7 @@ function HelpCenter() {
 
               <h4>4. 注册主题</h4>
               <p>在 <code>packages/web/src/themes/index.ts</code> 中注册你的主题：</p>
-              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`import { YourTheme } from './your-theme';
 
 export const themes: Record<string, ThemeComponents> = {
@@ -1410,7 +1410,7 @@ export const themes: Record<string, ThemeComponents> = {
               <p>NextBlog 插件系统允许你扩展博客功能。</p>
               
               <h4>1. 插件结构</h4>
-              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`plugins/your-plugin/
 ├── package.json   # 插件元信息
 ├── index.ts       # 插件入口
@@ -1421,7 +1421,7 @@ export const themes: Record<string, ThemeComponents> = {
               </pre>
 
               <h4>2. 插件元信息 (package.json)</h4>
-              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`{
   "name": "your-plugin",
   "version": "1.0.0",
@@ -1459,7 +1459,7 @@ export const themes: Record<string, ThemeComponents> = {
               </table>
 
               <h4>4. 插件入口示例</h4>
-              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`// index.ts
 export default {
   name: 'your-plugin',
@@ -1490,7 +1490,7 @@ export default {
               </pre>
 
               <h4>5. 添加后端路由</h4>
-              <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`// server/routes.ts
 import { Router } from 'express';
 
