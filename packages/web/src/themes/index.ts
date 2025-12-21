@@ -2,6 +2,8 @@
 import { ClassicTheme } from './classic';
 import { MinimalTheme } from './minimal';
 import { MagazineTheme } from './magazine';
+import { CyberTheme } from './cyber';
+import { VibrantTheme } from './vibrant';
 
 export interface ArticleCardProps {
   article: {
@@ -114,6 +116,8 @@ export const themes: Record<string, ThemeComponents> = {
   classic: ClassicTheme,
   minimal: MinimalTheme,
   magazine: MagazineTheme,
+  cyber: CyberTheme,
+  vibrant: VibrantTheme,
 };
 
 // 获取主题

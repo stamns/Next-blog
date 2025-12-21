@@ -47,6 +47,9 @@ export function HomeClient({ articles, total, page, pageSize, categoryId, tagId 
   } else if (themeName === 'minimal') {
     // 极简主题使用单列列表
     gridClass = 'grid-cols-1';
+  } else if (themeName === 'cyber' || themeName === 'vibrant') {
+    // cyber 和 vibrant 主题支持 1-3 列
+    gridClass = gridClasses[themeConfig.gridColumns] || gridClasses['2'];
   }
 
   // 构建分页的基础 URL，保留筛选参数
