@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { analyticsService } from '../services/analytics.service';
-import { authMiddleware } from '../middleware/auth';
+import { authenticate, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.post('/track', async (req: Request, res: Response) => {
 });
 
 // 以下接口需要管理员权限
-router.use(authMiddleware);
+router.use(authenticate);
 
 // 获取统计概览
 router.get('/summary', async (req: Request, res: Response) => {

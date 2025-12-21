@@ -55,7 +55,7 @@ export function PagesPage() {
 
   const updateSetting = useMutation({
     mutationFn: ({ key, value }: { key: string; value: string }) =>
-      api.put('/settings', { key, value }),
+      api.put('/settings', { [key]: value }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['settings'] }),
   });
 
