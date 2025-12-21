@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/auth.routes.js';
 import articleRoutes from './routes/article.routes.js';
@@ -24,6 +26,31 @@ import { themeService } from './services/theme.service.js';
 
 const app = express();
 const PORT = process.env.PORT || 3012;
+
+// 安全中间件 - HTTP 安全头
+app.use(helmet({
+  contentSecurityPolicy: false, // 允许内联脚本（主题自定义代码需要）
+  crossOriginEmbedderPolicy: false,
+}));
+
+// 速率限制 - 防止暴力破解和 DDoS
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 500, // 每IP最多500次请求
+  message: { success: false, error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1小时
+  max: 10, // 每IP最多10次登录尝试
+  message: { success: false, error: 'Too many login attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/', generalLimiter);
 
 // CORS 配置 - 支持环境变量 ALLOWED_ORIGINS（逗号分隔）
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -51,7 +78,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes); // 登录接口使用更严格的限制
 app.use('/api/articles', articleRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/tags', tagRoutes);

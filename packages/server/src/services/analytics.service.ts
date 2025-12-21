@@ -338,12 +338,27 @@ export const analyticsService = {
       }));
   },
 
-  // 获取设备统计
+  // 获取设备统计 - 基于会话时间统计活跃访客的设备
   async getDeviceStats(startDate: Date, endDate: Date) {
+    // 先获取时间范围内有会话的访客ID
+    const activeSessions = await prisma.visitorSession.findMany({
+      where: {
+        startTime: { gte: startDate, lte: endDate },
+      },
+      select: { visitorId: true },
+      distinct: ['visitorId'],
+    });
+    
+    const visitorIds = activeSessions.map(s => s.visitorId);
+    
+    if (visitorIds.length === 0) {
+      return [];
+    }
+    
     const devices = await prisma.visitor.groupBy({
       by: ['device'],
       where: {
-        firstVisit: { gte: startDate, lte: endDate },
+        id: { in: visitorIds },
       },
       _count: { id: true },
     });
@@ -356,12 +371,26 @@ export const analyticsService = {
     }));
   },
 
-  // 获取浏览器统计
+  // 获取浏览器统计 - 基于会话时间统计活跃访客的浏览器
   async getBrowserStats(startDate: Date, endDate: Date) {
+    const activeSessions = await prisma.visitorSession.findMany({
+      where: {
+        startTime: { gte: startDate, lte: endDate },
+      },
+      select: { visitorId: true },
+      distinct: ['visitorId'],
+    });
+    
+    const visitorIds = activeSessions.map(s => s.visitorId);
+    
+    if (visitorIds.length === 0) {
+      return [];
+    }
+    
     const browsers = await prisma.visitor.groupBy({
       by: ['browser'],
       where: {
-        firstVisit: { gte: startDate, lte: endDate },
+        id: { in: visitorIds },
       },
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
@@ -376,12 +405,26 @@ export const analyticsService = {
     }));
   },
 
-  // 获取地区统计
+  // 获取地区统计 - 基于会话时间统计活跃访客的地区
   async getCountryStats(startDate: Date, endDate: Date) {
+    const activeSessions = await prisma.visitorSession.findMany({
+      where: {
+        startTime: { gte: startDate, lte: endDate },
+      },
+      select: { visitorId: true },
+      distinct: ['visitorId'],
+    });
+    
+    const visitorIds = activeSessions.map(s => s.visitorId);
+    
+    if (visitorIds.length === 0) {
+      return [];
+    }
+    
     const countries = await prisma.visitor.groupBy({
       by: ['country'],
       where: {
-        firstVisit: { gte: startDate, lte: endDate },
+        id: { in: visitorIds },
       },
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },

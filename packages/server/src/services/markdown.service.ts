@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import rehypeSlug from 'rehype-slug';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { createHighlighter, type Highlighter } from 'shiki';
 
 export interface TocItem {
@@ -17,6 +18,24 @@ export interface ParseResult {
   html: string;
   toc: TocItem[];
 }
+
+// 自定义 sanitize schema，允许代码高亮所需的属性
+const sanitizeSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    code: [...(defaultSchema.attributes?.code || []), 'className'],
+    span: [...(defaultSchema.attributes?.span || []), 'className', 'style'],
+    pre: [...(defaultSchema.attributes?.pre || []), 'className', 'style'],
+    // 允许标题的 id 属性（用于目录跳转）
+    h1: [...(defaultSchema.attributes?.h1 || []), 'id'],
+    h2: [...(defaultSchema.attributes?.h2 || []), 'id'],
+    h3: [...(defaultSchema.attributes?.h3 || []), 'id'],
+    h4: [...(defaultSchema.attributes?.h4 || []), 'id'],
+    h5: [...(defaultSchema.attributes?.h5 || []), 'id'],
+    h6: [...(defaultSchema.attributes?.h6 || []), 'id'],
+  },
+};
 
 let highlighter: Highlighter | null = null;
 
@@ -79,13 +98,14 @@ export class MarkdownService {
       headingStack.push(item);
     }
 
-    // 解析 Markdown 为 HTML，使用自定义的 slug 生成器确保 ID 一致
+    // 解析 Markdown 为 HTML，使用 sanitize 防止 XSS
     const processor = unified()
       .use(remarkParse)
       .use(remarkGfm)
-      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(remarkRehype)
+      .use(rehypeSanitize, sanitizeSchema)
       .use(rehypeSlug)
-      .use(rehypeStringify, { allowDangerousHtml: true });
+      .use(rehypeStringify);
 
     const result = await processor.process(markdown);
     let html = String(result);

@@ -2,7 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { createError } from './errorHandler.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+// JWT 密钥必须通过环境变量设置
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set!');
+  // 在开发环境使用默认值，生产环境必须设置
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+}
+const SECRET = JWT_SECRET || 'dev-only-secret-do-not-use-in-production';
+
 const JWT_EXPIRES_IN = '24h';
 const SESSION_TIMEOUT_MINUTES = 30;
 
@@ -22,7 +32,7 @@ export interface AuthRequest extends Request {
  * 生成 JWT token
  */
 export function generateToken(payload: Omit<JwtPayload, 'iat' | 'exp'>): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 /**
@@ -30,7 +40,7 @@ export function generateToken(payload: Omit<JwtPayload, 'iat' | 'exp'>): string 
  */
 export function verifyToken(token: string): JwtPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
+    return jwt.verify(token, SECRET) as JwtPayload;
   } catch {
     return null;
   }

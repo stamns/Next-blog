@@ -3,6 +3,7 @@ import type { Media } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import * as dns from 'dns/promises';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const THUMBNAIL_DIR = path.join(UPLOAD_DIR, 'thumbnails');
@@ -18,6 +19,27 @@ const MIME_TYPE_MAP: Record<string, string> = {
   '.bmp': 'image/bmp',
   '.ico': 'image/x-icon',
 };
+
+// 内网 IP 段（SSRF 防护）
+const PRIVATE_IP_RANGES = [
+  /^127\./, // localhost
+  /^10\./, // 10.0.0.0/8
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12
+  /^192\.168\./, // 192.168.0.0/16
+  /^169\.254\./, // link-local
+  /^0\./, // 0.0.0.0/8
+  /^::1$/, // IPv6 localhost
+  /^fe80:/i, // IPv6 link-local
+  /^fc00:/i, // IPv6 unique local
+  /^fd00:/i, // IPv6 unique local
+];
+
+/**
+ * 检查 IP 是否为内网地址
+ */
+function isPrivateIP(ip: string): boolean {
+  return PRIVATE_IP_RANGES.some((range) => range.test(ip));
+}
 
 export interface UploadFileInput {
   originalName: string;
@@ -173,11 +195,39 @@ export class MediaService {
       throw new Error('只支持 HTTP/HTTPS 协议');
     }
 
+    // SSRF 防护：检查目标是否为内网地址
+    const hostname = parsedUrl.hostname;
+
+    // 检查是否直接是 IP 地址
+    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+      if (isPrivateIP(hostname)) {
+        throw new Error('不允许访问内网地址');
+      }
+    } else {
+      // 解析域名获取 IP
+      try {
+        const addresses = await dns.resolve4(hostname);
+        for (const ip of addresses) {
+          if (isPrivateIP(ip)) {
+            console.warn(`[Security] SSRF 防护: 域名 ${hostname} 解析到内网 IP ${ip}`);
+            throw new Error('不允许访问内网地址');
+          }
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message === '不允许访问内网地址') {
+          throw err;
+        }
+        // DNS 解析失败，继续尝试（可能是 IPv6 only）
+        console.warn(`[Warning] DNS 解析失败: ${hostname}`, err);
+      }
+    }
+
     // 下载图片
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
+      redirect: 'follow',
     });
 
     if (!response.ok) {

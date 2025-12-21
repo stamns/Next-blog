@@ -1,0 +1,1083 @@
+// Clarity Focus 主题 - 清晰聚焦：三栏结构，视觉重心集中在中间
+// 设计理念：结构清楚，但注意力始终留在内容本身
+import { ReactNode, useState, useEffect } from 'react';
+import Link from 'next/link';
+import { ThemeToggle } from '../../components/ThemeToggle';
+import { SearchBox } from '../../components/SearchBox';
+import { formatDate, truncate } from '../../lib/utils';
+import { useSiteSettingsContext } from '../../contexts/site-settings-context';
+import {
+  CustomHtmlBlock,
+  useHeadCodeInjector,
+  customCodeConfigOptions,
+  dualSidebarCustomHtmlConfigOptions,
+  customCodeDefaultConfig,
+  dualSidebarCustomHtmlDefaultConfig,
+} from '../shared';
+import {
+  Search,
+  Menu,
+  X,
+  ChevronRight,
+  ChevronDown,
+  Calendar,
+  Clock,
+  Eye,
+  Folder,
+  Tag,
+  ArrowLeft,
+  ExternalLink,
+  FileText,
+  Hash,
+  TrendingUp,
+} from 'lucide-react';
+import type {
+  ThemeComponents,
+  ThemeConfig,
+  ThemeConfigOption,
+  ArticleCardProps,
+  ArticleDetailProps,
+  CategoryListProps,
+  TagListProps,
+  SearchResultProps,
+} from '../index';
+
+// ============ 主题配置选项 ============
+const configOptions: ThemeConfigOption[] = [
+  {
+    key: 'colorScheme',
+    label: '色彩方案',
+    type: 'select',
+    options: [
+      { value: 'light-gray', label: '浅灰（清爽）' },
+      { value: 'warm-cream', label: '暖米色（护眼）' },
+      { value: 'cool-blue', label: '冷蓝调（专业）' },
+      { value: 'pure-white', label: '纯净白（极简）' },
+    ],
+    default: 'light-gray',
+    description: '整体色调风格',
+  },
+  {
+    key: 'mainColumnWidth',
+    label: '主栏宽度',
+    type: 'select',
+    options: [
+      { value: 'narrow', label: '窄版 (600px)' },
+      { value: 'medium', label: '中等 (680px) - 推荐' },
+      { value: 'wide', label: '宽版 (760px)' },
+    ],
+    default: 'medium',
+    description: '中间主内容区域宽度',
+  },
+  {
+    key: 'sidebarWidth',
+    label: '侧栏宽度',
+    type: 'select',
+    options: [
+      { value: 'narrow', label: '窄 (180px)' },
+      { value: 'medium', label: '中等 (220px)' },
+      { value: 'wide', label: '宽 (260px)' },
+    ],
+    default: 'medium',
+    description: '左右侧栏宽度',
+  },
+  {
+    key: 'leftSidebarContent',
+    label: '左侧栏内容',
+    type: 'select',
+    options: [
+      { value: 'categories', label: '分类导航' },
+      { value: 'toc', label: '文章目录（详情页）' },
+      { value: 'both', label: '分类 + 目录' },
+      { value: 'hidden', label: '隐藏' },
+    ],
+    default: 'categories',
+    description: '左侧栏显示的内容',
+  },
+  {
+    key: 'rightSidebarContent',
+    label: '右侧栏内容',
+    type: 'select',
+    options: [
+      { value: 'search-tags', label: '搜索 + 标签' },
+      { value: 'recent', label: '最近文章' },
+      { value: 'full', label: '搜索 + 标签 + 最近' },
+      { value: 'hidden', label: '隐藏' },
+    ],
+    default: 'search-tags',
+    description: '右侧栏显示的内容',
+  },
+  {
+    key: 'sidebarVisibility',
+    label: '侧栏显示模式',
+    type: 'select',
+    options: [
+      { value: 'always', label: '始终显示' },
+      { value: 'hover', label: '悬停显示' },
+      { value: 'scroll-hide', label: '滚动时隐藏' },
+    ],
+    default: 'always',
+    description: '侧栏的显示行为',
+  },
+  {
+    key: 'fontSize',
+    label: '正文字号',
+    type: 'select',
+    options: [
+      { value: 'small', label: '小 (16px)' },
+      { value: 'medium', label: '中 (17px) - 推荐' },
+      { value: 'large', label: '大 (18px)' },
+    ],
+    default: 'medium',
+    description: '正文字体大小',
+  },
+  {
+    key: 'lineHeight',
+    label: '行高',
+    type: 'select',
+    options: [
+      { value: 'compact', label: '紧凑 (1.6)' },
+      { value: 'comfortable', label: '舒适 (1.75)' },
+      { value: 'relaxed', label: '宽松 (1.9)' },
+    ],
+    default: 'comfortable',
+    description: '行与行之间的间距',
+  },
+  {
+    key: 'showReadingProgress',
+    label: '显示阅读进度',
+    type: 'boolean',
+    default: true,
+    description: '在文章页顶部显示阅读进度条',
+  },
+  {
+    key: 'showReadingTime',
+    label: '显示阅读时间',
+    type: 'boolean',
+    default: true,
+    description: '显示预估阅读时间',
+  },
+  {
+    key: 'showViewCount',
+    label: '显示阅读量',
+    type: 'boolean',
+    default: true,
+    description: '显示文章阅读次数',
+  },
+  {
+    key: 'articleListStyle',
+    label: '文章列表风格',
+    type: 'select',
+    options: [
+      { value: 'minimal', label: '极简（仅标题）' },
+      { value: 'compact', label: '紧凑（标题+日期）' },
+      { value: 'standard', label: '标准（含摘要）' },
+    ],
+    default: 'standard',
+    description: '首页文章列表展示方式',
+  },
+  {
+    key: 'excerptLength',
+    label: '摘要长度',
+    type: 'number',
+    default: 100,
+    description: '文章摘要显示的字符数',
+  },
+  {
+    key: 'showFeaturedImage',
+    label: '显示特色图片',
+    type: 'boolean',
+    default: false,
+    description: '在文章列表中显示封面图',
+  },
+  {
+    key: 'sidebarOpacity',
+    label: '侧栏透明度',
+    type: 'select',
+    options: [
+      { value: 'subtle', label: '淡化 (0.5)' },
+      { value: 'light', label: '轻微 (0.7)' },
+      { value: 'normal', label: '正常 (1.0)' },
+    ],
+    default: 'light',
+    description: '侧栏内容的透明度',
+  },
+  {
+    key: 'headerStyle',
+    label: '顶部导航',
+    type: 'select',
+    options: [
+      { value: 'minimal', label: '极简（仅Logo）' },
+      { value: 'standard', label: '标准（Logo+导航）' },
+      { value: 'hidden', label: '隐藏' },
+    ],
+    default: 'minimal',
+    description: '顶部导航栏风格',
+  },
+  {
+    key: 'footerText',
+    label: '页脚文字',
+    type: 'text',
+    default: '',
+    description: '自定义页脚文字',
+  },
+  {
+    key: 'leftSidebarCustomHtml',
+    label: '左侧栏自定义HTML',
+    type: 'text',
+    default: '',
+    description: '在左侧栏底部显示的自定义HTML代码（支持广告、统计等）',
+  },
+  {
+    key: 'rightSidebarCustomHtml',
+    label: '右侧栏自定义HTML',
+    type: 'text',
+    default: '',
+    description: '在右侧栏底部显示的自定义HTML代码（支持广告、统计等）',
+  },
+  {
+    key: 'customHeadCode',
+    label: '自定义Head代码',
+    type: 'text',
+    default: '',
+    description: '插入到页面head标签中的代码（如统计代码、字体等）',
+  },
+  {
+    key: 'customBodyStartCode',
+    label: '页面顶部自定义代码',
+    type: 'text',
+    default: '',
+    description: '插入到页面body开始处的代码',
+  },
+  {
+    key: 'customBodyEndCode',
+    label: '页面底部自定义代码',
+    type: 'text',
+    default: '',
+    description: '插入到页面body结束处的代码',
+  },
+];
+
+const defaultConfig: ThemeConfig = {
+  colorScheme: 'light-gray',
+  mainColumnWidth: 'medium',
+  sidebarWidth: 'medium',
+  leftSidebarContent: 'categories',
+  rightSidebarContent: 'search-tags',
+  sidebarVisibility: 'always',
+  fontSize: 'medium',
+  lineHeight: 'comfortable',
+  showReadingProgress: true,
+  showReadingTime: true,
+  showViewCount: true,
+  articleListStyle: 'standard',
+  excerptLength: 100,
+  showFeaturedImage: false,
+  sidebarOpacity: 'light',
+  headerStyle: 'minimal',
+  footerText: '',
+  leftSidebarCustomHtml: '',
+  rightSidebarCustomHtml: '',
+  customHeadCode: '',
+  customBodyStartCode: '',
+  customBodyEndCode: '',
+};
+
+// ============ 样式映射 ============
+const colorSchemes: Record<string, {
+  bg: string;
+  bgDark: string;
+  mainBg: string;
+  mainBgDark: string;
+  sideBg: string;
+  sideBgDark: string;
+  text: string;
+  textDark: string;
+  textMuted: string;
+  textMutedDark: string;
+  border: string;
+  borderDark: string;
+  accent: string;
+}> = {
+  'light-gray': {
+    bg: 'bg-[#f5f5f5]',
+    bgDark: 'dark:bg-[#111]',
+    mainBg: 'bg-white',
+    mainBgDark: 'dark:bg-[#1a1a1a]',
+    sideBg: 'bg-[#fafafa]',
+    sideBgDark: 'dark:bg-[#151515]',
+    text: 'text-[#1a1a1a]',
+    textDark: 'dark:text-[#e8e8e8]',
+    textMuted: 'text-[#666]',
+    textMutedDark: 'dark:text-[#888]',
+    border: 'border-[#e5e5e5]',
+    borderDark: 'dark:border-[#2a2a2a]',
+    accent: '#4a7c59',
+  },
+  'warm-cream': {
+    bg: 'bg-[#f8f6f1]',
+    bgDark: 'dark:bg-[#1a1815]',
+    mainBg: 'bg-[#fffdf8]',
+    mainBgDark: 'dark:bg-[#1f1d1a]',
+    sideBg: 'bg-[#f5f3ee]',
+    sideBgDark: 'dark:bg-[#1a1815]',
+    text: 'text-[#2c2a25]',
+    textDark: 'dark:text-[#e5e3de]',
+    textMuted: 'text-[#7a7770]',
+    textMutedDark: 'dark:text-[#9a9890]',
+    border: 'border-[#e8e5dc]',
+    borderDark: 'dark:border-[#3a3530]',
+    accent: '#8b7355',
+  },
+  'cool-blue': {
+    bg: 'bg-[#f0f4f8]',
+    bgDark: 'dark:bg-[#0d1117]',
+    mainBg: 'bg-white',
+    mainBgDark: 'dark:bg-[#161b22]',
+    sideBg: 'bg-[#f6f8fa]',
+    sideBgDark: 'dark:bg-[#0d1117]',
+    text: 'text-[#1f2937]',
+    textDark: 'dark:text-[#e6edf3]',
+    textMuted: 'text-[#6b7280]',
+    textMutedDark: 'dark:text-[#8b949e]',
+    border: 'border-[#d0d7de]',
+    borderDark: 'dark:border-[#30363d]',
+    accent: '#2563eb',
+  },
+  'pure-white': {
+    bg: 'bg-white',
+    bgDark: 'dark:bg-[#0a0a0a]',
+    mainBg: 'bg-white',
+    mainBgDark: 'dark:bg-[#0a0a0a]',
+    sideBg: 'bg-[#fafafa]',
+    sideBgDark: 'dark:bg-[#111]',
+    text: 'text-[#111]',
+    textDark: 'dark:text-[#fafafa]',
+    textMuted: 'text-[#555]',
+    textMutedDark: 'dark:text-[#aaa]',
+    border: 'border-[#eee]',
+    borderDark: 'dark:border-[#222]',
+    accent: '#333',
+  },
+};
+
+const mainWidthMap: Record<string, string> = {
+  narrow: 'max-w-[600px]',
+  medium: 'max-w-[680px]',
+  wide: 'max-w-[760px]',
+};
+
+const sidebarWidthMap: Record<string, string> = {
+  narrow: 'w-[180px]',
+  medium: 'w-[220px]',
+  wide: 'w-[260px]',
+};
+
+const fontSizeMap: Record<string, string> = {
+  small: 'text-base',
+  medium: 'text-[17px]',
+  large: 'text-lg',
+};
+
+const lineHeightMap: Record<string, string> = {
+  compact: 'leading-relaxed',
+  comfortable: 'leading-[1.75]',
+  relaxed: 'leading-loose',
+};
+
+const opacityMap: Record<string, string> = {
+  subtle: 'opacity-50 hover:opacity-80',
+  light: 'opacity-70 hover:opacity-100',
+  normal: 'opacity-100',
+};
+
+// 计算阅读时间
+function calculateReadingTime(content: string): number {
+  const wordsPerMinute = 300;
+  const textLength = content.replace(/<[^>]*>/g, '').length;
+  return Math.max(1, Math.ceil(textLength / wordsPerMinute));
+}
+
+
+// ============ 左侧栏组件 ============
+function LeftSidebar({ 
+  config, 
+  colors, 
+  categories 
+}: { 
+  config: ThemeConfig; 
+  colors: typeof colorSchemes['light-gray'];
+  categories?: CategoryListProps['categories'];
+}) {
+  const content = config.leftSidebarContent as string;
+  const opacity = opacityMap[config.sidebarOpacity as string] || opacityMap.light;
+  const { navMenu } = useSiteSettingsContext();
+
+  if (content === 'hidden') return null;
+
+  const defaultCategories = categories || [];
+
+  return (
+    <aside className={`${opacity} transition-opacity duration-300`}>
+      {/* 站点导航 */}
+      {(content === 'categories' || content === 'both') && (
+        <nav className="mb-8">
+          <h3 className={`text-xs font-medium uppercase tracking-wider mb-4 ${colors.textMuted} ${colors.textMutedDark}`}>
+            导航
+          </h3>
+          <ul className="space-y-2">
+            {navMenu.length > 0 ? (
+              navMenu.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    href={item.url}
+                    target={item.type === 'external' ? '_blank' : undefined}
+                    className={`flex items-center gap-2 py-1 text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}
+                  >
+                    <ChevronRight size={12} />
+                    {item.label}
+                    {item.type === 'external' && <ExternalLink size={10} />}
+                  </Link>
+                </li>
+              ))
+            ) : (
+              <>
+                <li>
+                  <Link href="/" className={`flex items-center gap-2 py-1 text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}>
+                    <ChevronRight size={12} />首页
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/categories" className={`flex items-center gap-2 py-1 text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}>
+                    <ChevronRight size={12} />分类
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tags" className={`flex items-center gap-2 py-1 text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}>
+                    <ChevronRight size={12} />标签
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about" className={`flex items-center gap-2 py-1 text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}>
+                    <ChevronRight size={12} />关于
+                  </Link>
+                </li>
+              </>
+            )}
+          </ul>
+        </nav>
+      )}
+
+      {/* 分类列表 */}
+      {(content === 'categories' || content === 'both') && defaultCategories.length > 0 && (
+        <nav>
+          <h3 className={`text-xs font-medium uppercase tracking-wider mb-4 ${colors.textMuted} ${colors.textMutedDark}`}>
+            分类
+          </h3>
+          <ul className="space-y-1">
+            {defaultCategories.slice(0, 10).map((cat) => (
+              <li key={cat.id}>
+                <Link
+                  href={`/category/${cat.slug}`}
+                  className={`flex items-center justify-between py-1.5 text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Folder size={12} />
+                    {cat.name}
+                  </span>
+                  {cat._count?.articles !== undefined && (
+                    <span className="text-xs opacity-60">{cat._count.articles}</span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
+      {/* 自定义HTML代码块 */}
+      {config.leftSidebarCustomHtml && (
+        <div className="mt-8">
+          <CustomHtmlBlock html={config.leftSidebarCustomHtml as string} />
+        </div>
+      )}
+    </aside>
+  );
+}
+
+// ============ 右侧栏组件 ============
+function RightSidebar({ 
+  config, 
+  colors,
+  tags,
+  recentArticles,
+}: { 
+  config: ThemeConfig; 
+  colors: typeof colorSchemes['light-gray'];
+  tags?: TagListProps['tags'];
+  recentArticles?: Array<{ id: string; title: string; slug: string; createdAt: string }>;
+}) {
+  const content = config.rightSidebarContent as string;
+  const opacity = opacityMap[config.sidebarOpacity as string] || opacityMap.light;
+
+  if (content === 'hidden') return null;
+
+  return (
+    <aside className={`${opacity} transition-opacity duration-300`}>
+      {/* 搜索框 */}
+      {(content === 'search-tags' || content === 'full') && (
+        <div className="mb-8">
+          <h3 className={`text-xs font-medium uppercase tracking-wider mb-4 ${colors.textMuted} ${colors.textMutedDark}`}>
+            搜索
+          </h3>
+          <SearchBox />
+        </div>
+      )}
+
+      {/* 标签云 */}
+      {(content === 'search-tags' || content === 'full') && tags && tags.length > 0 && (
+        <div className="mb-8">
+          <h3 className={`text-xs font-medium uppercase tracking-wider mb-4 ${colors.textMuted} ${colors.textMutedDark}`}>
+            标签
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {tags.slice(0, 15).map((tag) => (
+              <Link
+                key={tag.id}
+                href={`/tag/${tag.slug}`}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded ${colors.border} ${colors.borderDark} border ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}
+              >
+                <Hash size={10} />
+                {tag.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 最近文章 */}
+      {(content === 'recent' || content === 'full') && recentArticles && recentArticles.length > 0 && (
+        <div>
+          <h3 className={`text-xs font-medium uppercase tracking-wider mb-4 ${colors.textMuted} ${colors.textMutedDark}`}>
+            最近文章
+          </h3>
+          <ul className="space-y-3">
+            {recentArticles.slice(0, 5).map((article) => (
+              <li key={article.id}>
+                <Link
+                  href={`/article/${article.slug}`}
+                  className={`block text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors line-clamp-2`}
+                >
+                  {article.title}
+                </Link>
+                <time className={`text-xs ${colors.textMuted} ${colors.textMutedDark} opacity-60`}>
+                  {formatDate(article.createdAt).split(' ')[0]}
+                </time>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 自定义HTML代码块 */}
+      {config.rightSidebarCustomHtml && (
+        <div className="mt-8">
+          <CustomHtmlBlock html={config.rightSidebarCustomHtml as string} />
+        </div>
+      )}
+    </aside>
+  );
+}
+
+// ============ 阅读进度条 ============
+function ReadingProgress({ color }: { color: string }) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setProgress(Math.min(100, scrollPercent));
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <div className="fixed top-0 left-0 w-full h-0.5 z-[100]">
+      <div
+        className="h-full transition-all duration-150"
+        style={{ width: `${progress}%`, backgroundColor: color }}
+      />
+    </div>
+  );
+}
+
+
+// ============ 核心布局组件 ============
+function BlogLayout({ children, config = defaultConfig }: { children: ReactNode; config?: ThemeConfig }) {
+  const { settings, navMenu } = useSiteSettingsContext();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const colors = colorSchemes[config.colorScheme as string] || colorSchemes['light-gray'];
+  const sidebarWidth = sidebarWidthMap[config.sidebarWidth as string] || sidebarWidthMap.medium;
+  const headerStyle = config.headerStyle as string;
+  const siteName = settings.siteName || 'Blog';
+  const customFooter = config.footerText as string;
+  const footerText = customFooter || settings.footerText?.replace('{year}', new Date().getFullYear().toString()) || `© ${new Date().getFullYear()} ${siteName}`;
+
+  const leftContent = config.leftSidebarContent as string;
+  const rightContent = config.rightSidebarContent as string;
+  const showLeftSidebar = leftContent !== 'hidden';
+  const showRightSidebar = rightContent !== 'hidden';
+
+  // 自定义代码
+  const customHeadCode = config.customHeadCode as string;
+  const customBodyStartCode = config.customBodyStartCode as string;
+  const customBodyEndCode = config.customBodyEndCode as string;
+
+  // 注入head代码（使用共享hook）
+  useHeadCodeInjector(customHeadCode);
+
+  return (
+    <div className={`min-h-screen ${colors.bg} ${colors.bgDark} ${colors.text} ${colors.textDark} transition-colors duration-300`}>
+      {/* 页面顶部自定义代码 */}
+      {customBodyStartCode && (
+        <CustomHtmlBlock html={customBodyStartCode} />
+      )}
+      {/* 顶部导航 */}
+      {headerStyle !== 'hidden' && (
+        <header className={`sticky top-0 z-50 ${colors.mainBg} ${colors.mainBgDark} border-b ${colors.border} ${colors.borderDark}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-between h-12">
+              <Link href="/" className="font-medium text-lg tracking-tight">
+                {siteName}
+              </Link>
+
+              {headerStyle === 'standard' && (
+                <nav className="hidden md:flex items-center gap-6">
+                  {navMenu.slice(0, 5).map((item) => (
+                    <Link
+                      key={item.id}
+                      href={item.url}
+                      target={item.type === 'external' ? '_blank' : undefined}
+                      className={`text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              )}
+
+              <div className="flex items-center gap-3">
+                <ThemeToggle />
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className={`lg:hidden p-2 rounded ${colors.textMuted} ${colors.textMutedDark}`}
+                  aria-label="菜单"
+                >
+                  {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* 移动端菜单 */}
+      {mobileMenuOpen && (
+        <div className={`lg:hidden fixed inset-0 z-40 ${colors.mainBg} ${colors.mainBgDark} pt-14`}>
+          <nav className="p-6 space-y-4">
+            <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block py-2">首页</Link>
+            <Link href="/categories" onClick={() => setMobileMenuOpen(false)} className="block py-2">分类</Link>
+            <Link href="/tags" onClick={() => setMobileMenuOpen(false)} className="block py-2">标签</Link>
+            <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="block py-2">关于</Link>
+            <div className="pt-4">
+              <SearchBox />
+            </div>
+          </nav>
+        </div>
+      )}
+
+      {/* 三栏布局 */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
+        <div className="flex gap-8 lg:gap-12">
+          {/* 左侧栏 */}
+          {showLeftSidebar && (
+            <div className={`hidden lg:block ${sidebarWidth} shrink-0`}>
+              <div className="sticky top-20">
+                <LeftSidebar config={config} colors={colors} />
+              </div>
+            </div>
+          )}
+
+          {/* 主内容区 */}
+          <main className={`flex-1 min-w-0 ${colors.mainBg} ${colors.mainBgDark} rounded-lg`}>
+            <div className="p-6 lg:p-8">
+              {children}
+            </div>
+          </main>
+
+          {/* 右侧栏 */}
+          {showRightSidebar && (
+            <div className={`hidden lg:block ${sidebarWidth} shrink-0`}>
+              <div className="sticky top-20">
+                <RightSidebar config={config} colors={colors} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 页脚 */}
+      <footer className={`py-8 border-t ${colors.border} ${colors.borderDark}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+          <p className={`text-sm ${colors.textMuted} ${colors.textMutedDark}`}>
+            {footerText}
+          </p>
+        </div>
+      </footer>
+
+      {/* 页面底部自定义代码 */}
+      {customBodyEndCode && (
+        <CustomHtmlBlock html={customBodyEndCode} />
+      )}
+    </div>
+  );
+}
+
+// ============ 文章卡片 ============
+function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { config?: ThemeConfig }) {
+  const colors = colorSchemes[config.colorScheme as string] || colorSchemes['light-gray'];
+  const listStyle = config.articleListStyle as string;
+  const showFeaturedImage = config.showFeaturedImage === true;
+  const excerptLength = (config.excerptLength as number) || 100;
+  const showViewCount = config.showViewCount !== false;
+  const showReadingTime = config.showReadingTime !== false;
+
+  const readingTime = calculateReadingTime(article.content);
+
+  // 极简风格
+  if (listStyle === 'minimal') {
+    return (
+      <article className={`py-3 border-b ${colors.border} ${colors.borderDark} last:border-b-0`}>
+        <Link href={`/article/${article.slug}`} className="group">
+          <h2 className={`font-medium ${colors.text} ${colors.textDark} group-hover:underline underline-offset-4`}>
+            {article.title}
+          </h2>
+        </Link>
+      </article>
+    );
+  }
+
+  // 紧凑风格
+  if (listStyle === 'compact') {
+    return (
+      <article className={`py-4 border-b ${colors.border} ${colors.borderDark} last:border-b-0`}>
+        <div className="flex items-baseline justify-between gap-4">
+          <Link href={`/article/${article.slug}`} className="group flex-1 min-w-0">
+            <h2 className={`font-medium ${colors.text} ${colors.textDark} group-hover:underline underline-offset-4 truncate`}>
+              {article.title}
+            </h2>
+          </Link>
+          <time className={`text-sm ${colors.textMuted} ${colors.textMutedDark} shrink-0`}>
+            {formatDate(article.publishedAt || article.createdAt).split(' ')[0]}
+          </time>
+        </div>
+      </article>
+    );
+  }
+
+  // 标准风格
+  return (
+    <article className={`py-6 border-b ${colors.border} ${colors.borderDark} last:border-b-0`}>
+      <div className={showFeaturedImage && article.featuredImage ? 'md:flex md:gap-5' : ''}>
+        {showFeaturedImage && article.featuredImage && (
+          <div className="md:w-40 md:shrink-0 mb-3 md:mb-0">
+            <Link href={`/article/${article.slug}`}>
+              <img
+                src={article.featuredImage}
+                alt={article.title}
+                className="w-full h-24 md:h-full object-cover rounded"
+              />
+            </Link>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <Link href={`/article/${article.slug}`} className="group">
+            <h2 className={`text-lg font-medium mb-2 ${colors.text} ${colors.textDark} group-hover:underline underline-offset-4`}>
+              {article.title}
+            </h2>
+          </Link>
+          <p className={`text-sm mb-3 leading-relaxed ${colors.textMuted} ${colors.textMutedDark} line-clamp-2`}>
+            {truncate(article.excerpt || article.content, excerptLength)}
+          </p>
+          <div className={`flex flex-wrap items-center gap-3 text-xs ${colors.textMuted} ${colors.textMutedDark}`}>
+            <span className="flex items-center gap-1">
+              <Calendar size={12} />
+              {formatDate(article.publishedAt || article.createdAt).split(' ')[0]}
+            </span>
+            {showReadingTime && (
+              <span className="flex items-center gap-1">
+                <Clock size={12} />
+                {readingTime} 分钟
+              </span>
+            )}
+            {showViewCount && (article.viewCount || 0) > 0 && (
+              <span className="flex items-center gap-1">
+                <Eye size={12} />
+                {article.viewCount}
+              </span>
+            )}
+            {article.category && (
+              <Link
+                href={`/category/${article.category.id}`}
+                className="flex items-center gap-1 hover:underline"
+              >
+                <Folder size={12} />
+                {article.category.name}
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+
+// ============ 文章详情 ============
+function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
+  const colors = colorSchemes[config.colorScheme as string] || colorSchemes['light-gray'];
+  const fontSize = fontSizeMap[config.fontSize as string] || fontSizeMap.medium;
+  const lineHeight = lineHeightMap[config.lineHeight as string] || lineHeightMap.comfortable;
+  const showReadingProgress = config.showReadingProgress !== false;
+  const showReadingTime = config.showReadingTime !== false;
+  const showViewCount = config.showViewCount !== false;
+
+  const readingTime = calculateReadingTime(article.content);
+
+  return (
+    <article className="animate-in fade-in duration-500">
+      {showReadingProgress && <ReadingProgress color={colors.accent} />}
+
+      {/* 文章头部 */}
+      <header className="mb-8 pb-6 border-b border-inherit">
+        {article.category && (
+          <Link
+            href={`/category/${article.category.id}`}
+            className={`inline-block text-xs uppercase tracking-wider mb-3 ${colors.textMuted} ${colors.textMutedDark} hover:underline`}
+          >
+            {article.category.name}
+          </Link>
+        )}
+
+        <h1 className={`text-2xl md:text-3xl font-bold leading-tight mb-4 ${colors.text} ${colors.textDark}`}>
+          {article.title}
+        </h1>
+
+        <div className={`flex flex-wrap items-center gap-4 text-sm ${colors.textMuted} ${colors.textMutedDark}`}>
+          {article.author && (
+            <span>{article.author.username}</span>
+          )}
+          <span className="flex items-center gap-1">
+            <Calendar size={14} />
+            {formatDate(article.publishedAt || article.createdAt)}
+          </span>
+          {showReadingTime && (
+            <span className="flex items-center gap-1">
+              <Clock size={14} />
+              {readingTime} 分钟阅读
+            </span>
+          )}
+          {showViewCount && (article.viewCount || 0) > 0 && (
+            <span className="flex items-center gap-1">
+              <Eye size={14} />
+              {article.viewCount}
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* 特色图片 */}
+      {article.featuredImage && (
+        <div className="mb-8">
+          <img
+            src={article.featuredImage}
+            alt={article.title}
+            className="w-full rounded-lg"
+          />
+        </div>
+      )}
+
+      {/* 正文 */}
+      <div
+        className={`
+          prose prose-slate dark:prose-invert max-w-none
+          ${fontSize} ${lineHeight}
+          prose-headings:font-semibold
+          prose-a:underline prose-a:underline-offset-4
+          prose-blockquote:border-l-2 prose-blockquote:not-italic
+          prose-code:text-sm prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:bg-gray-100 dark:prose-code:bg-gray-800
+          prose-pre:rounded-lg prose-pre:bg-[#1a1a1a]
+          prose-img:rounded-lg
+        `}
+        style={{ '--tw-prose-links': colors.accent } as React.CSSProperties}
+        dangerouslySetInnerHTML={{ __html: article.htmlContent || article.content }}
+      />
+
+      {/* 标签 */}
+      {article.tags && article.tags.length > 0 && (
+        <div className={`flex flex-wrap gap-2 mt-10 pt-6 border-t ${colors.border} ${colors.borderDark}`}>
+          <Tag size={14} className={`${colors.textMuted} ${colors.textMutedDark}`} />
+          {article.tags.map((tag) => (
+            <Link
+              key={tag.id}
+              href={`/tag/${tag.id}`}
+              className={`text-sm px-3 py-1 rounded-full border ${colors.border} ${colors.borderDark} ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}
+            >
+              {tag.name}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* 返回 */}
+      <nav className={`mt-8 pt-6 border-t ${colors.border} ${colors.borderDark}`}>
+        <Link
+          href="/"
+          className={`inline-flex items-center gap-2 text-sm ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}
+        >
+          <ArrowLeft size={14} />
+          返回首页
+        </Link>
+      </nav>
+    </article>
+  );
+}
+
+// ============ 分类列表 ============
+function CategoryList({ categories, config = defaultConfig }: CategoryListProps & { config?: ThemeConfig }) {
+  const colors = colorSchemes[config.colorScheme as string] || colorSchemes['light-gray'];
+
+  const flatCategories: { category: CategoryListProps['categories'][0]; depth: number }[] = [];
+  const flatten = (cats: CategoryListProps['categories'], depth = 0) => {
+    cats.forEach((cat) => {
+      flatCategories.push({ category: cat, depth });
+      if (cat.children) flatten(cat.children as CategoryListProps['categories'], depth + 1);
+    });
+  };
+  flatten(categories);
+
+  return (
+    <div>
+      <h1 className={`text-2xl font-bold mb-6 ${colors.text} ${colors.textDark}`}>
+        分类
+      </h1>
+      <div className={`divide-y ${colors.border} ${colors.borderDark}`}>
+        {flatCategories.map(({ category, depth }) => (
+          <Link
+            key={category.id}
+            href={`/category/${category.slug}`}
+            className={`flex items-center justify-between py-3 hover:${colors.text} hover:${colors.textDark} transition-colors`}
+            style={{ paddingLeft: depth * 20 }}
+          >
+            <div className="flex items-center gap-2">
+              {depth > 0 && <ChevronRight size={12} className={colors.textMuted} />}
+              <Folder size={14} className={colors.textMuted} />
+              <span className={`${colors.text} ${colors.textDark}`}>{category.name}</span>
+            </div>
+            <span className={`text-sm ${colors.textMuted} ${colors.textMutedDark}`}>
+              {category._count?.articles || 0}
+            </span>
+          </Link>
+        ))}
+      </div>
+      {flatCategories.length === 0 && (
+        <p className={`text-center py-8 ${colors.textMuted} ${colors.textMutedDark}`}>
+          暂无分类
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ============ 标签列表 ============
+function TagList({ tags, config = defaultConfig }: TagListProps & { config?: ThemeConfig }) {
+  const colors = colorSchemes[config.colorScheme as string] || colorSchemes['light-gray'];
+
+  return (
+    <div>
+      <h1 className={`text-2xl font-bold mb-6 ${colors.text} ${colors.textDark}`}>
+        标签
+      </h1>
+      <div className="flex flex-wrap gap-3">
+        {tags.map((tag) => (
+          <Link
+            key={tag.id}
+            href={`/tag/${tag.slug}`}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${colors.border} ${colors.borderDark} ${colors.textMuted} ${colors.textMutedDark} hover:${colors.text} hover:${colors.textDark} transition-colors`}
+          >
+            <Hash size={14} />
+            {tag.name}
+            <span className="text-xs opacity-60">({tag._count?.articles || 0})</span>
+          </Link>
+        ))}
+      </div>
+      {tags.length === 0 && (
+        <p className={`text-center py-8 ${colors.textMuted} ${colors.textMutedDark}`}>
+          暂无标签
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ============ 搜索结果 ============
+function SearchResults({ articles, total, query, config = defaultConfig }: SearchResultProps & { config?: ThemeConfig }) {
+  const colors = colorSchemes[config.colorScheme as string] || colorSchemes['light-gray'];
+
+  if (!query) return null;
+
+  return (
+    <div>
+      <h1 className={`text-2xl font-bold mb-2 ${colors.text} ${colors.textDark}`}>
+        搜索结果
+      </h1>
+      <p className={`mb-6 ${colors.textMuted} ${colors.textMutedDark}`}>
+        找到 {total} 篇关于 "{query}" 的文章
+      </p>
+      <div>
+        {articles.map((article) => (
+          <ArticleCard
+            key={article.id}
+            article={{ ...article, featuredImage: null, category: null, viewCount: 0 }}
+            config={{ ...config, articleListStyle: 'compact' }}
+          />
+        ))}
+      </div>
+      {articles.length === 0 && (
+        <p className={`text-center py-8 ${colors.textMuted} ${colors.textMutedDark}`}>
+          未找到相关文章
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ============ 导出主题 ============
+export const ClarityFocusTheme: ThemeComponents = {
+  name: 'clarity-focus',
+  displayName: '清晰聚焦',
+  description: '三栏结构博客主题，视觉重心集中在中间，结构清楚但注意力始终留在内容本身',
+  configOptions,
+  defaultConfig,
+  BlogLayout,
+  ArticleCard,
+  ArticleDetail,
+  CategoryList,
+  TagList,
+  SearchResults,
+};

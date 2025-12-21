@@ -19,8 +19,8 @@
 - **项目展示** - 项目作品集，支持分类管理
 
 ### 互动功能
-- **评论系统** - 评论提交、审核、垃圾检测
-- **访问统计** - 浏览量统计、热门文章排行
+- **评论系统** - 评论提交、审核、垃圾检测、XSS 防护
+- **访问统计** - 浏览量统计、热门文章排行、访客分析
 
 ### AI 功能
 - **多模型支持** - OpenAI、Claude、通义千问
@@ -29,7 +29,7 @@
 
 ### 系统功能
 - **用户认证** - JWT + bcrypt 安全认证
-- **主题系统** - 九套主题，支持深色/浅色模式
+- **主题系统** - 11 套主题，支持深色/浅色模式
   - Classic（经典）- 传统博客风格
   - Minimal（极简）- 简洁清爽
   - Magazine（杂志）- 杂志排版风格
@@ -39,12 +39,22 @@
   - Vibe-Pulse（微博风格）- 社交媒体风格
   - Aether-Bloom（以太花语）- 优雅花卉主题
   - Chroma-Dimension（幻彩维度）- 渐变色彩主题
+  - Serene-Ink（静墨）- 以阅读为核心的极简主题
+  - Clarity-Focus（清晰聚焦）- 三栏结构，视觉重心集中
 - **主题配置** - 每个主题支持自定义配置选项
+- **自定义代码注入** - 支持 Head/Body 自定义代码、侧边栏 HTML
 - **三级菜单** - 支持三级导航菜单配置
 - **幻灯片** - 首页幻灯片，支持全宽轮播、卡片网格、简约横幅三种样式
 - **插件系统** - 插件安装、启用/禁用、依赖管理
 - **数据备份** - JSON/Markdown 导出导入
 - **SEO 优化** - 服务端渲染，爬虫可抓取完整内容
+
+### 安全特性
+- **XSS 防护** - Markdown 内容净化、评论 HTML 转义
+- **速率限制** - API 请求频率限制，防止暴力破解
+- **HTTP 安全头** - Helmet 中间件保护
+- **密码安全** - bcrypt 哈希、账户锁定机制
+- **SQL 注入防护** - Prisma ORM 参数化查询
 
 ## 技术栈
 
@@ -53,6 +63,7 @@
 - TypeScript
 - Prisma ORM + SQLite
 - JWT 认证
+- Helmet + Rate Limit 安全中间件
 - Vitest 测试框架
 
 ### 前端
@@ -92,9 +103,10 @@ cp packages/server/.env.example packages/server/.env
 编辑 `packages/server/.env`：
 ```env
 DATABASE_URL="file:./dev.db"
-JWT_SECRET="your-secret-key"
+JWT_SECRET="your-secret-key-change-this"  # 必须修改！
 ENCRYPTION_KEY="your-32-char-encryption-key"
 PORT=3012
+ALLOWED_ORIGINS=*  # 生产环境改为具体域名
 ```
 
 前端配置：
@@ -165,6 +177,26 @@ npm run build
 npm start
 ```
 
+### 使用 PM2 部署（推荐）
+
+```bash
+# 安装 PM2
+npm install -g pm2
+
+# 启动后端
+cd packages/server
+npm run build
+pm2 start dist/index.js --name blog-server
+
+# 启动前端
+cd packages/web
+npm run build
+pm2 start npm --name blog-web -- start
+
+# 查看日志
+pm2 logs blog-server
+```
+
 ### 版本更新
 
 当拉取新代码后，执行以下步骤：
@@ -179,10 +211,13 @@ npx prisma migrate deploy
 npx prisma generate
 
 # 3. 重新构建
+npm run build
 cd ../web
 npm run build
 
 # 4. 重启服务
+pm2 restart blog-server
+pm2 restart blog-web
 ```
 
 ## 项目结构
@@ -211,15 +246,18 @@ blog/
 │           ├── hooks/          # 自定义 Hooks
 │           ├── stores/         # 状态管理
 │           ├── themes/         # 主题组件
+│           │   └── shared/     # 主题共享组件
 │           ├── lib/            # 工具函数
 │           └── types/          # 类型定义
+├── SECURITY_AUDIT.md           # 安全审计报告
+└── README.md
 ```
 
 ## API 接口
 
 | 路由 | 说明 |
 |------|------|
-| `/api/auth` | 用户认证 |
+| `/api/auth` | 用户认证（含速率限制） |
 | `/api/articles` | 文章管理 |
 | `/api/categories` | 分类管理 |
 | `/api/tags` | 标签管理 |
@@ -228,6 +266,7 @@ blog/
 | `/api/knowledge` | 知识库 |
 | `/api/comments` | 评论管理 |
 | `/api/stats` | 访问统计 |
+| `/api/analytics` | 访客分析 |
 | `/api/backup` | 数据备份 |
 | `/api/ai` | AI 功能 |
 | `/api/themes` | 主题管理 |
@@ -237,11 +276,42 @@ blog/
 | `/api/projects` | 项目管理 |
 | `/api/project-categories` | 项目分类 |
 
+## 安全配置
+
+### 速率限制
+
+系统内置 API 速率限制，防止暴力破解和滥用：
+
+| 接口 | 时间窗口 | 最大请求数 |
+|------|----------|-----------|
+| 通用 API | 15分钟 | 500次/IP |
+| 登录接口 | 1小时 | 10次/IP |
+
+超出限制后返回 429 状态码。
+
+### 账户安全
+
+- 密码错误 5 次后账户锁定 15 分钟
+- 密码使用 bcrypt 哈希存储（cost=10）
+- JWT Token 24 小时过期
+
+### 生产环境必须配置
+
+```env
+# 必须设置强随机密钥
+JWT_SECRET=<随机32位以上字符串>
+
+# 必须限制允许的域名
+ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+```
+
 ## 默认账户
 
 运行 `npm run db:seed` 后会创建默认管理员账户：
 - 用户名: `admin`
 - 密码: `admin123`
+
+**⚠️ 生产环境请立即修改默认密码！**
 
 或者使用 Prisma Studio 手动管理数据：
 ```bash
@@ -293,7 +363,7 @@ npx prisma generate  # 生成 Prisma Client
 # 数据库
 DATABASE_URL="file:./dev.db"
 
-# JWT 密钥
+# JWT 密钥（生产环境必须修改）
 JWT_SECRET="your-jwt-secret-key"
 
 # API 密钥加密密钥 (32字符)
@@ -302,7 +372,7 @@ ENCRYPTION_KEY="your-32-character-encryption-key"
 # 服务端口
 PORT=3012
 
-# CORS 允许的域名（生产环境）
+# CORS 允许的域名（生产环境必须配置具体域名）
 ALLOWED_ORIGINS=https://your-domain.com
 ```
 
@@ -321,6 +391,22 @@ NEXT_PUBLIC_API_URL=http://127.0.0.1:3012
 2. 填写 API Key
 3. 设置默认模型
 
+## 主题开发
+
+主题位于 `packages/web/src/themes/` 目录，每个主题包含：
+
+- `index.tsx` - 主题组件和配置
+- 共享组件位于 `themes/shared/`
+
+### 自定义代码注入
+
+部分主题支持自定义代码注入功能：
+
+- **customHeadCode** - 注入到 `<head>` 标签（统计代码、字体等）
+- **customBodyStartCode** - 页面顶部代码
+- **customBodyEndCode** - 页面底部代码
+- **sidebarCustomHtml** - 侧边栏自定义 HTML
+
 ## SEO 说明
 
 本项目使用 Next.js 服务端渲染（SSR），博客前台页面在服务端生成完整 HTML：
@@ -332,6 +418,15 @@ NEXT_PUBLIC_API_URL=http://127.0.0.1:3012
 - **后台管理** - CSR，客户端渲染
 
 爬虫访问时可以获取完整的页面内容，有利于 SEO。
+
+## 更新日志
+
+### 2025-12-22
+- 新增 Serene-Ink（静墨）主题 - 以阅读为核心的极简设计
+- 新增 Clarity-Focus（清晰聚焦）主题 - 三栏结构布局
+- 新增主题自定义代码注入功能
+- 新增访客分析功能（设备、浏览器、来源统计）
+- 安全加固：XSS 防护、速率限制、HTTP 安全头
 
 ## License
 

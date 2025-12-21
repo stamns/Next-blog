@@ -9,6 +9,7 @@ import { VibePulseTheme } from './vibe-pulse';
 import { AetherBloomTheme } from './aether-bloom';
 import { ChromaDimensionTheme } from './chroma-dimension';
 import { SereneInkTheme } from './serene-ink';
+import { ClarityFocusTheme } from './clarity-focus';
 
 export interface ArticleCardProps {
   article: {
@@ -129,6 +130,7 @@ export const themes: Record<string, ThemeComponents> = {
   'aether-bloom': AetherBloomTheme,
   'chroma-dimension': ChromaDimensionTheme,
   'serene-ink': SereneInkTheme,
+  'clarity-focus': ClarityFocusTheme,
 };
 
 // 获取主题

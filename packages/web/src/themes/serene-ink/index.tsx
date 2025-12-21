@@ -8,6 +8,14 @@ import { MobileNavMenu } from '../../components/NavMenu';
 import { formatDate, truncate } from '../../lib/utils';
 import { useSiteSettingsContext } from '../../contexts/site-settings-context';
 import {
+  CustomHtmlBlock,
+  useHeadCodeInjector,
+  customCodeConfigOptions,
+  sidebarCustomHtmlConfigOptions,
+  customCodeDefaultConfig,
+  sidebarCustomHtmlDefaultConfig,
+} from '../shared';
+import {
   Search,
   Menu,
   X,
@@ -183,6 +191,9 @@ const configOptions: ThemeConfigOption[] = [
     default: '',
     description: '自定义页脚文字（留空使用默认）',
   },
+  // 添加自定义代码注入配置
+  ...customCodeConfigOptions,
+  ...sidebarCustomHtmlConfigOptions,
 ];
 
 const defaultConfig: ThemeConfig = {
@@ -202,6 +213,9 @@ const defaultConfig: ThemeConfig = {
   showAuthor: false,
   showViewCount: true,
   footerText: '',
+  // 添加自定义代码默认值
+  ...customCodeDefaultConfig,
+  ...sidebarCustomHtmlDefaultConfig,
 };
 
 // 色彩方案定义
@@ -352,10 +366,19 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   const [searchOpen, setSearchOpen] = useState(false);
 
   const colors = colorSchemes[config.colorScheme as string] || colorSchemes['warm-paper'];
+  const contentWidth = contentWidthMap[config.contentWidth as string] || contentWidthMap.medium;
   const siteName = settings.siteName || 'Blog';
   const headerStyle = config.headerStyle || 'standard';
   const customFooter = config.footerText as string;
   const footerText = customFooter || settings.footerText?.replace('{year}', new Date().getFullYear().toString()) || `© ${new Date().getFullYear()} ${siteName}`;
+
+  // 自定义代码
+  const customHeadCode = config.customHeadCode as string;
+  const customBodyStartCode = config.customBodyStartCode as string;
+  const customBodyEndCode = config.customBodyEndCode as string;
+
+  // 注入head代码
+  useHeadCodeInjector(customHeadCode);
 
   const defaultNavItems: Array<{ id: string; label: string; url: string; type: 'internal' | 'external'; sortOrder: number }> = [
     { id: '1', label: '首页', url: '/', type: 'internal', sortOrder: 0 },
@@ -367,10 +390,13 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
 
   return (
     <div className={`min-h-screen ${colors.bg} ${colors.bgDark} ${colors.text} ${colors.textDark} transition-colors duration-300`}>
+      {/* 页面顶部自定义代码 */}
+      {customBodyStartCode && <CustomHtmlBlock html={customBodyStartCode} />}
+
       {/* 导航栏 */}
       {headerStyle !== 'hidden' && (
         <header className={`sticky top-0 z-50 ${colors.bg} ${colors.bgDark} border-b ${colors.border} ${colors.borderDark} backdrop-blur-sm bg-opacity-95`}>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className={`${contentWidth} mx-auto px-4 sm:px-6`}>
             <div className="flex items-center justify-between h-14">
               {/* Logo */}
               <Link href="/" className="font-semibold text-lg tracking-tight">
@@ -421,19 +447,24 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
         <MobileNavMenu items={navItems} onClose={() => setMobileMenuOpen(false)} />
       )}
 
-      {/* 主内容区 */}
+      {/* 主内容区 - 应用内容宽度限制 */}
       <main className="min-h-[calc(100vh-8rem)]">
-        {children}
+        <div className={`${contentWidth} mx-auto px-4 sm:px-6 py-8 md:py-12`}>
+          {children}
+        </div>
       </main>
 
       {/* 页脚 - 极简 */}
       <footer className={`py-12 border-t ${colors.border} ${colors.borderDark}`}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+        <div className={`${contentWidth} mx-auto px-4 sm:px-6 text-center`}>
           <p className={`text-sm ${colors.textMuted} ${colors.textMutedDark}`}>
             {footerText}
           </p>
         </div>
       </footer>
+
+      {/* 页面底部自定义代码 */}
+      {customBodyEndCode && <CustomHtmlBlock html={customBodyEndCode} />}
     </div>
   );
 }
@@ -611,7 +642,6 @@ function ReadingProgress({ color }: { color: string }) {
 // ============ 文章详情 ============
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
   const colors = colorSchemes[config.colorScheme as string] || colorSchemes['warm-paper'];
-  const contentWidth = contentWidthMap[config.contentWidth as string] || contentWidthMap.medium;
   const fontSize = fontSizeMap[config.fontSize as string] || fontSizeMap.medium;
   const lineHeight = lineHeightMap[config.lineHeight as string] || lineHeightMap.comfortable;
   const paragraphSpacing = paragraphSpacingMap[config.paragraphSpacing as string] || paragraphSpacingMap.normal;
@@ -630,7 +660,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
       {showReadingProgress && <ReadingProgress color={colors.accent} />}
 
       {/* 文章头部 */}
-      <header className={`py-12 md:py-20 ${contentWidth} mx-auto px-4 sm:px-6`}>
+      <header className="py-8 md:py-12">
         {/* 分类 */}
         {article.category && (
           <Link
@@ -642,7 +672,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
         )}
 
         {/* 标题 */}
-        <h1 className={`text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-6 ${colors.text} ${colors.textDark}`}>
+        <h1 className={`text-3xl md:text-4xl font-bold leading-tight mb-6 ${colors.text} ${colors.textDark}`}>
           {article.title}
         </h1>
 
@@ -672,7 +702,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
 
       {/* 特色图片 */}
       {showArticleDetailFeaturedImage && article.featuredImage && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 mb-12">
+        <div className="mb-8">
           <img
             src={article.featuredImage}
             alt={article.title}
@@ -682,7 +712,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
       )}
 
       {/* 正文内容 */}
-      <div className={`${contentWidth} mx-auto px-4 sm:px-6 pb-16`}>
+      <div className="pb-8">
         <div
           className={`
             prose prose-slate dark:prose-invert max-w-none
@@ -740,7 +770,6 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
 // ============ 分类列表 ============
 function CategoryList({ categories, config = defaultConfig }: CategoryListProps & { config?: ThemeConfig }) {
   const colors = colorSchemes[config.colorScheme as string] || colorSchemes['warm-paper'];
-  const contentWidth = contentWidthMap[config.contentWidth as string] || contentWidthMap.medium;
 
   // 展平分类（支持多级）
   const flatCategories: { category: CategoryListProps['categories'][0]; depth: number }[] = [];
@@ -753,7 +782,7 @@ function CategoryList({ categories, config = defaultConfig }: CategoryListProps 
   flatten(categories);
 
   return (
-    <div className={`${contentWidth} mx-auto px-4 sm:px-6 py-12 md:py-20`}>
+    <div className="py-4">
       <h1 className={`text-2xl md:text-3xl font-bold mb-8 ${colors.text} ${colors.textDark}`}>
         分类
       </h1>
@@ -792,10 +821,9 @@ function CategoryList({ categories, config = defaultConfig }: CategoryListProps 
 // ============ 标签列表 ============
 function TagList({ tags, config = defaultConfig }: TagListProps & { config?: ThemeConfig }) {
   const colors = colorSchemes[config.colorScheme as string] || colorSchemes['warm-paper'];
-  const contentWidth = contentWidthMap[config.contentWidth as string] || contentWidthMap.medium;
 
   return (
-    <div className={`${contentWidth} mx-auto px-4 sm:px-6 py-12 md:py-20`}>
+    <div className="py-4">
       <h1 className={`text-2xl md:text-3xl font-bold mb-8 ${colors.text} ${colors.textDark}`}>
         标签
       </h1>
@@ -826,12 +854,11 @@ function TagList({ tags, config = defaultConfig }: TagListProps & { config?: The
 // ============ 搜索结果 ============
 function SearchResults({ articles, total, query, config = defaultConfig }: SearchResultProps & { config?: ThemeConfig }) {
   const colors = colorSchemes[config.colorScheme as string] || colorSchemes['warm-paper'];
-  const contentWidth = contentWidthMap[config.contentWidth as string] || contentWidthMap.medium;
 
   if (!query) return null;
 
   return (
-    <div className={`${contentWidth} mx-auto px-4 sm:px-6 py-12 md:py-20`}>
+    <div className="py-4">
       <h1 className={`text-2xl md:text-3xl font-bold mb-2 ${colors.text} ${colors.textDark}`}>
         搜索结果
       </h1>

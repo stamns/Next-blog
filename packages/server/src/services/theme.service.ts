@@ -222,6 +222,16 @@ export class ThemeService {
           description: '以阅读为核心的极简主题：干净、稳重、适合长时间阅读，刻意弱化装饰，让内容成为绝对主角',
         }),
       },
+      {
+        name: 'clarity-focus',
+        version: '1.0.0',
+        path: '/themes/clarity-focus',
+        isActive: false,
+        config: JSON.stringify({
+          displayName: '清晰聚焦',
+          description: '三栏结构博客主题：视觉重心集中在中间，左右侧栏辅助导航，结构清楚但注意力始终留在内容本身',
+        }),
+      },
     ];
 
     const results: Theme[] = [];

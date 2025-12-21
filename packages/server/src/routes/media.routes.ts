@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import multer from 'multer';
+import fileType from 'file-type';
 import { mediaService } from '../services/media.service.js';
 import { settingService } from '../services/setting.service.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -15,6 +16,51 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
+
+/**
+ * 验证文件真实类型（通过 magic bytes）
+ * 防止攻击者伪造 MIME 类型上传恶意文件
+ */
+async function validateFileType(
+  buffer: Buffer,
+  declaredMimeType: string,
+  allowedTypes: string[]
+): Promise<{ valid: boolean; detectedType?: string; error?: string }> {
+  // SVG 是文本格式，file-type 无法检测，需要特殊处理
+  if (declaredMimeType === 'image/svg+xml') {
+    const content = buffer.toString('utf8', 0, 1000);
+    if (content.includes('<svg') || content.includes('<?xml')) {
+      return { valid: allowedTypes.includes('image/svg+xml'), detectedType: 'image/svg+xml' };
+    }
+    return { valid: false, error: '文件内容不是有效的 SVG' };
+  }
+
+  // 使用 magic bytes 检测真实文件类型
+  const detected = await fileType.fromBuffer(buffer);
+
+  if (!detected) {
+    // 无法检测类型（可能是文本文件如 SVG）
+    // 对于无法检测的文件，拒绝上传以确保安全
+    return { valid: false, error: '无法识别文件类型' };
+  }
+
+  // 检查检测到的类型是否在允许列表中
+  if (!allowedTypes.includes(detected.mime)) {
+    return {
+      valid: false,
+      detectedType: detected.mime,
+      error: `文件实际类型 (${detected.mime}) 不在允许列表中`,
+    };
+  }
+
+  // 检查声明的类型与实际类型是否匹配（防止伪造）
+  if (detected.mime !== declaredMimeType) {
+    console.warn(`[Security] MIME 类型不匹配: 声明=${declaredMimeType}, 实际=${detected.mime}`);
+    // 使用检测到的真实类型，而不是声明的类型
+  }
+
+  return { valid: true, detectedType: detected.mime };
+}
 
 /**
  * GET /api/media
@@ -81,29 +127,35 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
     }
 
     // 获取允许的文件类型
-    const allowedTypes = await settingService.get('allowedMediaTypes') || DEFAULT_ALLOWED_TYPES;
+    const allowedTypes = (await settingService.get('allowedMediaTypes')) || DEFAULT_ALLOWED_TYPES;
     const allowedList = allowedTypes.split(',').map((t: string) => t.trim().toLowerCase());
-    
-    // 验证文件类型
-    if (!allowedList.includes(file.mimetype.toLowerCase())) {
-      return next(createError(`不支持的文件类型: ${file.mimetype}。允许的类型: ${allowedTypes}`, 400, 'VALIDATION_ERROR'));
+
+    // 验证文件真实类型（通过 magic bytes）
+    const validation = await validateFileType(file.buffer, file.mimetype.toLowerCase(), allowedList);
+    if (!validation.valid) {
+      return next(
+        createError(validation.error || `不支持的文件类型。允许的类型: ${allowedTypes}`, 400, 'VALIDATION_ERROR')
+      );
     }
+
+    // 使用检测到的真实 MIME 类型
+    const actualMimeType = validation.detectedType || file.mimetype;
 
     const media = await mediaService.upload({
       originalName: file.originalname,
-      mimeType: file.mimetype,
+      mimeType: actualMimeType,
       size: file.size,
       buffer: file.buffer,
     });
 
     // 返回可访问的 URL
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       data: {
         ...media,
         url: `/api/media/${media.id}/file`,
         path: `/api/media/${media.id}/file`,
-      }
+      },
     });
   } catch (error) {
     next(error);

@@ -13,6 +13,20 @@ export interface CreateCommentInput {
 // 垃圾评论关键词
 const SPAM_KEYWORDS = ['viagra', 'casino', 'lottery', 'click here', 'free money', 'buy now'];
 
+/**
+ * HTML 转义函数 - 防止 XSS 攻击
+ */
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (char) => map[char]);
+}
+
 export class CommentService {
   /**
    * 创建评论
@@ -21,11 +35,15 @@ export class CommentService {
     // 检测垃圾评论
     const isSpam = this.detectSpam(input.content);
 
+    // XSS 防护：转义用户输入
+    const sanitizedContent = escapeHtml(input.content);
+    const sanitizedAuthorName = escapeHtml(input.authorName);
+
     return prisma.comment.create({
       data: {
-        content: input.content,
-        authorName: input.authorName,
-        authorEmail: input.authorEmail,
+        content: sanitizedContent,
+        authorName: sanitizedAuthorName,
+        authorEmail: input.authorEmail, // email 不显示给用户，无需转义
         articleId: input.articleId,
         userId: input.userId,
         parentId: input.parentId,
