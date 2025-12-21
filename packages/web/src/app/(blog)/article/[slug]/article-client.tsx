@@ -200,17 +200,11 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
     );
   }
 
-  // aether-bloom 和 chroma-dimension 主题使用右侧固定目录布局
-  if (isAetherBloomTheme || isChromaDimensionTheme) {
-    const tocBgClass = isChromaDimensionTheme 
-      ? 'bg-white/10 dark:bg-white/5 border-white/20 dark:border-white/10' 
-      : 'bg-white/40 dark:bg-slate-900/40 border-stone-200/50 dark:border-slate-700/50';
-    const tocTextClass = isChromaDimensionTheme
-      ? 'text-slate-200 dark:text-slate-300'
-      : 'text-stone-700 dark:text-stone-300';
-    const tocLinkHoverClass = isChromaDimensionTheme
-      ? 'hover:text-pink-400'
-      : 'hover:text-blue-500 dark:hover:text-blue-400';
+  // aether-bloom 主题使用右侧固定目录布局
+  if (isAetherBloomTheme) {
+    const tocBgClass = 'bg-white/40 dark:bg-slate-900/40 border-stone-200/50 dark:border-slate-700/50';
+    const tocTextClass = 'text-stone-700 dark:text-stone-300';
+    const tocLinkHoverClass = 'hover:text-blue-500 dark:hover:text-blue-400';
 
     return (
       <div className="relative">
@@ -309,6 +303,47 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
             </aside>
           )}
         </div>
+      </div>
+    );
+  }
+
+  // chroma-dimension 主题 - 目录已集成到主题内部，使用简单布局
+  if (isChromaDimensionTheme) {
+    return (
+      <div className="relative">
+        {/* Mobile TOC Toggle */}
+        {toc.length > 0 && (
+          <div className="xl:hidden mb-6">
+            <button
+              onClick={() => setTocOpen(!tocOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl border backdrop-blur-sm bg-white/10 dark:bg-white/5 border-white/20 dark:border-white/10"
+            >
+              <span className="font-bold text-sm text-slate-200 dark:text-slate-300">📑 文章目录</span>
+              <svg
+                className={`w-5 h-5 transition-transform ${tocOpen ? 'rotate-180' : ''} text-slate-200 dark:text-slate-300`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {tocOpen && (
+              <nav className="mt-2 p-4 rounded-xl border backdrop-blur-sm text-sm bg-white/10 dark:bg-white/5 border-white/20 dark:border-white/10 text-slate-200 dark:text-slate-300">
+                {renderTocItems(toc)}
+              </nav>
+            )}
+          </div>
+        )}
+
+        <ArticleDetail article={article} config={themeConfig} />
+        
+        {/* 评论区 */}
+        {isCommentEnabled() && (
+          <div className="mt-12">
+            <CommentSection articleId={article.id} />
+          </div>
+        )}
       </div>
     );
   }

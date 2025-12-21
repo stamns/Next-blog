@@ -517,6 +517,12 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
   const p = palettes[config.vibeMode as string] || palettes['electric-candy'];
   const showFeaturedImage = config.showFeaturedImage !== false;
 
+  // 从文章内容提取目录
+  const articleAny = article as any;
+  const toc = articleAny.toc && articleAny.toc.length > 0 
+    ? articleAny.toc 
+    : extractTOCFromContent(article.content);
+
   return (
     <article className="animate-in fade-in duration-700">
       <header className="relative pt-8 md:pt-20 pb-16 md:pb-32 mb-12 md:mb-20 border-b-4 md:border-b-8 border-current/20">
@@ -591,11 +597,12 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
         </div>
       )}
 
-      {/* 阅读区布局 */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-16">
-        <aside className="lg:col-span-3 hidden xl:block space-y-8 md:space-y-12">
-          <div className={`p-6 md:p-8 border-2 md:border-4 rounded-2xl md:rounded-[3rem] space-y-6 md:space-y-8 ${p.glass} ${p.darkGlass}`} style={{ borderColor: `${p.primary}30` }}>
-            <h4 className={`text-[9px] md:text-[10px] font-black tracking-[0.3em] opacity-50 uppercase ${p.text} ${p.darkText}`}>
+      {/* 阅读区布局 - 左侧边栏统一宽度280px */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-12">
+        <aside className="xl:col-span-3 hidden xl:block space-y-6" style={{ width: '280px' }}>
+          {/* System Context 模块 */}
+          <div className={`p-6 border-2 rounded-2xl space-y-6 ${p.glass} ${p.darkGlass}`} style={{ borderColor: `${p.primary}30` }}>
+            <h4 className={`text-[10px] font-black tracking-[0.3em] opacity-50 uppercase ${p.text} ${p.darkText}`}>
               System Context
             </h4>
             <p className={`text-xs font-bold leading-relaxed italic opacity-70 ${p.text} ${p.darkText}`}>
@@ -607,15 +614,71 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
               <div className="w-2 h-2 rounded-full bg-yellow-500 animate-ping" style={{ animationDelay: '0.7s' }} />
             </div>
           </div>
-          {/* 阅读量 */}
+
+          {/* Views 模块 */}
           <div className={`p-6 rounded-2xl ${p.glass} ${p.darkGlass} text-center`}>
             <Eye size={24} className="mx-auto mb-2 opacity-40" />
             <p className={`text-2xl font-black ${p.title} ${p.darkTitle}`}>{article.viewCount || 0}</p>
             <p className={`text-[10px] font-black uppercase tracking-widest opacity-40 ${p.text} ${p.darkText}`}>Views</p>
           </div>
+
+          {/* 目录模块 - 放在 Views 下面 */}
+          {toc.length > 0 && (
+            <div className={`p-6 rounded-2xl ${p.glass} ${p.darkGlass} border border-white/10`}>
+              <h4 className={`text-[10px] font-black tracking-[0.3em] opacity-50 uppercase mb-4 ${p.text} ${p.darkText}`}>
+                Navigation
+              </h4>
+              <nav className="text-sm max-h-[50vh] overflow-y-auto pr-1">
+                <ul className="space-y-2">
+                  {toc.map((item: any, index: number) => (
+                    <li key={`${item.id}-${index}`}>
+                      <a
+                        href={`#${item.id}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const element = document.getElementById(item.id);
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            window.history.pushState(null, '', `#${item.id}`);
+                          }
+                        }}
+                        className={`block py-1 transition-colors opacity-70 hover:opacity-100 hover:text-pink-400 line-clamp-2 ${p.text} ${p.darkText}`}
+                        title={item.text}
+                      >
+                        {item.text}
+                      </a>
+                      {item.children && item.children.length > 0 && (
+                        <ul className="ml-3 mt-1 space-y-1 border-l border-white/20 pl-2">
+                          {item.children.map((child: any, childIndex: number) => (
+                            <li key={`${child.id}-${childIndex}`}>
+                              <a
+                                href={`#${child.id}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const element = document.getElementById(child.id);
+                                  if (element) {
+                                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    window.history.pushState(null, '', `#${child.id}`);
+                                  }
+                                }}
+                                className={`block py-0.5 text-xs transition-colors opacity-60 hover:opacity-100 hover:text-pink-400 line-clamp-1 ${p.text} ${p.darkText}`}
+                                title={child.text}
+                              >
+                                {child.text}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+          )}
         </aside>
 
-        <div className="lg:col-span-9">
+        <div className="xl:col-span-9">
           <div
             className={`prose prose-lg md:prose-2xl max-w-none
               prose-headings:font-black prose-headings:tracking-tighter
@@ -682,6 +745,52 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
       </footer>
     </article>
   );
+}
+
+// 从内容提取目录的辅助函数
+function extractTOCFromContent(content: string): any[] {
+  if (!content) return [];
+  
+  const contentWithoutCode = content.replace(/```[\s\S]*?```/g, '');
+  const headingRegex = /^(#{1,6})\s+(.+)$/gm;
+  const flatToc: any[] = [];
+  const idCounter: Record<string, number> = {};
+  let match;
+
+  while ((match = headingRegex.exec(contentWithoutCode)) !== null) {
+    const level = match[1].length;
+    const text = match[2].trim();
+    const baseId = text.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '');
+    
+    let id = baseId;
+    if (idCounter[baseId] !== undefined) {
+      idCounter[baseId]++;
+      id = `${baseId}-${idCounter[baseId]}`;
+    } else {
+      idCounter[baseId] = 0;
+    }
+    
+    flatToc.push({ id, text, level, children: [] });
+  }
+
+  // 构建树形结构
+  const result: any[] = [];
+  const stack: any[] = [];
+
+  for (const item of flatToc) {
+    while (stack.length > 0 && stack[stack.length - 1].level >= item.level) {
+      stack.pop();
+    }
+
+    if (stack.length === 0) {
+      result.push(item);
+    } else {
+      stack[stack.length - 1].children.push(item);
+    }
+    stack.push(item);
+  }
+
+  return result;
 }
 
 
