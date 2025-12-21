@@ -8,6 +8,7 @@ import { AuraNexusTheme } from './aura-nexus';
 import { VibePulseTheme } from './vibe-pulse';
 import { AetherBloomTheme } from './aether-bloom';
 import { ChromaDimensionTheme } from './chroma-dimension';
+import { SereneInkTheme } from './serene-ink';
 
 export interface ArticleCardProps {
   article: {
@@ -127,6 +128,7 @@ export const themes: Record<string, ThemeComponents> = {
   'vibe-pulse': VibePulseTheme,
   'aether-bloom': AetherBloomTheme,
   'chroma-dimension': ChromaDimensionTheme,
+  'serene-ink': SereneInkTheme,
 };
 
 // 获取主题

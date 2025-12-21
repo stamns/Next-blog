@@ -58,45 +58,33 @@ export const analyticsService = {
       scrollDepth,
     } = data;
 
-    // 1. 更新或创建访客
-    let visitor = await prisma.visitor.findUnique({
+    // 1. 使用 upsert 避免并发创建冲突
+    const visitor = await prisma.visitor.upsert({
       where: { visitorId },
+      create: {
+        visitorId,
+        ip,
+        browser,
+        browserVer,
+        os,
+        osVer,
+        device,
+        screenWidth,
+        screenHeight,
+        language,
+        timezone,
+      },
+      update: {
+        lastVisit: new Date(),
+        ...(browser && { browser }),
+        ...(browserVer && { browserVer }),
+        ...(os && { os }),
+        ...(osVer && { osVer }),
+        ...(device && { device }),
+        ...(screenWidth && { screenWidth }),
+        ...(screenHeight && { screenHeight }),
+      },
     });
-
-    if (!visitor) {
-      // 新访客
-      visitor = await prisma.visitor.create({
-        data: {
-          visitorId,
-          ip,
-          browser,
-          browserVer,
-          os,
-          osVer,
-          device,
-          screenWidth,
-          screenHeight,
-          language,
-          timezone,
-        },
-      });
-    } else {
-      // 更新访客最后访问时间
-      visitor = await prisma.visitor.update({
-        where: { visitorId },
-        data: {
-          lastVisit: new Date(),
-          // 更新设备信息（可能有变化）
-          ...(browser && { browser }),
-          ...(browserVer && { browserVer }),
-          ...(os && { os }),
-          ...(osVer && { osVer }),
-          ...(device && { device }),
-          ...(screenWidth && { screenWidth }),
-          ...(screenHeight && { screenHeight }),
-        },
-      });
-    }
 
     // 2. 处理会话 - 使用前端sessionId作为标识符查找最近的会话
     let session;
