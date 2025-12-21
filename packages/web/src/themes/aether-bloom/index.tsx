@@ -309,11 +309,11 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const defaultNavItems = [
-    { label: '时光动态', url: '/' },
-    { label: '林间归档', url: '/categories' },
-    { label: '标签花园', url: '/tags' },
-    { label: '关于', url: '/about' },
+  const defaultNavItems: { id: string; label: string; url: string; type: 'internal'; sortOrder: number }[] = [
+    { id: '1', label: '时光动态', url: '/', type: 'internal', sortOrder: 0 },
+    { id: '2', label: '林间归档', url: '/categories', type: 'internal', sortOrder: 1 },
+    { id: '3', label: '标签花园', url: '/tags', type: 'internal', sortOrder: 2 },
+    { id: '4', label: '关于', url: '/about', type: 'internal', sortOrder: 3 },
   ];
 
   const navItems = navMenu.length > 0 ? navMenu : defaultNavItems;

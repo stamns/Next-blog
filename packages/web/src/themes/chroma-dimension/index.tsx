@@ -309,11 +309,11 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   const footerText = settings.footerText?.replace('{year}', new Date().getFullYear().toString())
     || `© ${new Date().getFullYear()} ${siteName}`;
 
-  const defaultNavItems = [
-    { label: 'SPECTRUM', url: '/' },
-    { label: 'ARCHIVE', url: '/categories' },
-    { label: 'FRAGMENTS', url: '/tags' },
-    { label: 'ABOUT', url: '/about' },
+  const defaultNavItems: { id: string; label: string; url: string; type: 'internal'; sortOrder: number }[] = [
+    { id: '1', label: 'SPECTRUM', url: '/', type: 'internal', sortOrder: 0 },
+    { id: '2', label: 'ARCHIVE', url: '/categories', type: 'internal', sortOrder: 1 },
+    { id: '3', label: 'FRAGMENTS', url: '/tags', type: 'internal', sortOrder: 2 },
+    { id: '4', label: 'ABOUT', url: '/about', type: 'internal', sortOrder: 3 },
   ];
   const navItems = navMenu.length > 0 ? navMenu : defaultNavItems;
 
