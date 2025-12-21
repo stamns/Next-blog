@@ -574,15 +574,15 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
             </div>
           )}
 
-          {/* 工具栏 */}
+          {/* 工具栏 - 使用真实数据 */}
           <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-1 hover:text-blue-500 transition-colors cursor-pointer">
+            <div className="flex items-center gap-1 hover:text-blue-500 transition-colors cursor-pointer opacity-50" title="转发功能开发中">
               <Repeat size={16} className="md:w-[18px] md:h-[18px]" />
-              <span className="text-[10px] md:text-xs font-bold">{Math.floor(Math.random() * 100) + 10}</span>
+              <span className="text-[10px] md:text-xs font-bold">-</span>
             </div>
-            <div className="flex items-center gap-1 hover:text-green-500 transition-colors cursor-pointer">
+            <div className="flex items-center gap-1 hover:text-green-500 transition-colors cursor-pointer opacity-50" title="评论功能">
               <MessageCircle size={16} className="md:w-[18px] md:h-[18px]" />
-              <span className="text-[10px] md:text-xs font-bold">{Math.floor(Math.random() * 50) + 5}</span>
+              <span className="text-[10px] md:text-xs font-bold">-</span>
             </div>
             <div
               className={`flex items-center gap-1 cursor-pointer transition-colors ${
@@ -592,13 +592,19 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
                 e.preventDefault();
                 setIsLiked(!isLiked);
               }}
+              title="点赞"
             >
               {isLiked ? <Heart size={16} className="md:w-[18px] md:h-[18px]" fill="currentColor" /> : <Heart size={16} className="md:w-[18px] md:h-[18px]" />}
               <span className="text-[10px] md:text-xs font-bold">{article.viewCount || 0}</span>
             </div>
-            <div className="flex items-center gap-1 hover:text-amber-500 transition-colors cursor-pointer">
-              <Share size={16} className="md:w-[18px] md:h-[18px]" />
-            </div>
+            <Link 
+              href={`/article/${article.slug}`}
+              className="flex items-center gap-1 hover:text-amber-500 transition-colors cursor-pointer"
+              title="查看详情"
+            >
+              <Eye size={16} className="md:w-[18px] md:h-[18px]" />
+              <span className="text-[10px] md:text-xs font-bold">{article.viewCount || 0}</span>
+            </Link>
           </div>
         </div>
       </div>

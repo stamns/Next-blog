@@ -153,6 +153,19 @@ const configOptions: ThemeConfigOption[] = [
     default: 'Aura.Nexus',
     description: '导航栏显示的品牌名称',
   },
+  {
+    key: 'backgroundIntensity',
+    label: '背景光效强度',
+    type: 'select',
+    options: [
+      { value: 'subtle', label: '微弱 (5%)' },
+      { value: 'normal', label: '正常 (10%)' },
+      { value: 'strong', label: '强烈 (20%)' },
+      { value: 'off', label: '关闭' },
+    ],
+    default: 'subtle',
+    description: '背景光晕的透明度，较低值可提高文字可读性',
+  },
 ];
 
 const defaultConfig: ThemeConfig = {
@@ -169,6 +182,7 @@ const defaultConfig: ThemeConfig = {
   heroSubtitle: 'Nexus',
   heroDescription: 'Pro Version 5.0 // Multiform Layout',
   navBrandText: 'Aura.Nexus',
+  backgroundIntensity: 'subtle',
 };
 
 // 配色方案
@@ -284,12 +298,21 @@ function AuraBackground({ config }: { config: ThemeConfig }) {
   const theme = vibeThemes[config.vibeMode] || vibeThemes['hyper-pop'];
   const spacing = spacingClasses[config.spacingDensity] || spacingClasses.airy;
   const dotSize = config.spacingDensity === 'airy' ? '80px 80px' : '40px 40px';
+  
+  // 背景光效强度映射
+  const intensityMap: Record<string, { glow: string; dot: string }> = {
+    'off': { glow: 'opacity-0', dot: 'opacity-[0.02]' },
+    'subtle': { glow: 'opacity-[0.05]', dot: 'opacity-[0.02]' },
+    'normal': { glow: 'opacity-10', dot: 'opacity-[0.03]' },
+    'strong': { glow: 'opacity-20', dot: 'opacity-[0.05]' },
+  };
+  const intensity = intensityMap[config.backgroundIntensity as string] || intensityMap['subtle'];
 
   return (
     <div className={`fixed inset-0 -z-10 transition-colors duration-1000 ${theme.bg} ${theme.darkBg}`}>
       {/* 点阵背景 */}
       <div
-        className="absolute top-0 left-0 w-full h-full opacity-[0.03] dark:opacity-[0.08]"
+        className={`absolute top-0 left-0 w-full h-full ${intensity.dot} dark:opacity-[0.05]`}
         style={{
           backgroundImage: `radial-gradient(circle, ${theme.primary} 1px, transparent 1px)`,
           backgroundSize: dotSize,
@@ -297,12 +320,12 @@ function AuraBackground({ config }: { config: ThemeConfig }) {
       />
       {/* 主色光晕 */}
       <div
-        className="absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full filter blur-[120px] opacity-10 animate-pulse"
+        className={`absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full filter blur-[120px] ${intensity.glow}`}
         style={{ backgroundColor: theme.primary }}
       />
       {/* 副色光晕 */}
       <div
-        className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full filter blur-[100px] opacity-10 animate-pulse"
+        className={`absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full filter blur-[100px] ${intensity.glow}`}
         style={{ backgroundColor: theme.secondary, animationDelay: '2s' }}
       />
     </div>

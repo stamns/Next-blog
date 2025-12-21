@@ -34,10 +34,11 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
   const isVibePulseTheme = themeName === 'vibe-pulse';
   const isAetherBloomTheme = themeName === 'aether-bloom';
   const isChromaDimensionTheme = themeName === 'chroma-dimension';
+  const isVibrantTheme = themeName === 'vibrant';
   const isDarkTheme = isCyberTheme || isAuraNexusTheme;
   
   // 这些主题有自己的布局，不显示侧边 TOC
-  const useSimpleLayout = isVibePulseTheme || isAetherBloomTheme || isChromaDimensionTheme;
+  const useSimpleLayout = isVibePulseTheme || isAetherBloomTheme || isChromaDimensionTheme || isVibrantTheme;
   const showSidebarToc = !useSimpleLayout && toc.length > 0;
   
   const tocCardClass = isDarkTheme 
@@ -96,13 +97,13 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
     </ul>
   );
 
-  // vibe-pulse 主题使用简化布局
+  // vibe-pulse 主题使用左侧固定目录布局
   if (isVibePulseTheme) {
     return (
-      <div>
-        {/* Mobile/Inline TOC Toggle for vibe-pulse */}
+      <div className="relative">
+        {/* Mobile TOC Toggle */}
         {toc.length > 0 && (
-          <div className="mb-4 px-4 md:px-6">
+          <div className="xl:hidden mb-4 px-4 md:px-6">
             <button
               onClick={() => setTocOpen(!tocOpen)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border ${mobileToggleClass}`}
@@ -125,33 +126,104 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           </div>
         )}
 
-        {/* 文章内容 */}
-        <ArticleDetail article={article} config={themeConfig} />
-        
-        {/* 评论区 */}
-        {isCommentEnabled() && (
-          <div className="px-4 md:px-6">
-            <CommentSection articleId={article.id} />
+        <div className="flex">
+          {/* 左侧固定目录 - 仅桌面端 */}
+          {toc.length > 0 && (
+            <aside className="hidden xl:block w-56 shrink-0 px-4">
+              <div className="sticky top-20 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <span>📑</span> 目录
+                </h3>
+                <nav className="text-sm max-h-[70vh] overflow-y-auto pr-1">
+                  <ul className="space-y-2">
+                    {toc.map((item: TOCItem, index: number) => (
+                      <li key={`${item.id}-${index}`}>
+                        <a
+                          href={`#${item.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const element = document.getElementById(item.id);
+                            if (element) {
+                              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              window.history.pushState(null, '', `#${item.id}`);
+                            }
+                          }}
+                          className="block py-1 text-slate-600 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors line-clamp-2"
+                          title={item.text}
+                        >
+                          {item.text}
+                        </a>
+                        {item.children && item.children.length > 0 && (
+                          <ul className="ml-3 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-600 pl-2">
+                            {item.children.map((child: TOCItem, childIndex: number) => (
+                              <li key={`${child.id}-${childIndex}`}>
+                                <a
+                                  href={`#${child.id}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const element = document.getElementById(child.id);
+                                    if (element) {
+                                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                      window.history.pushState(null, '', `#${child.id}`);
+                                    }
+                                  }}
+                                  className="block py-0.5 text-xs text-slate-500 dark:text-slate-500 hover:text-orange-500 dark:hover:text-orange-400 transition-colors line-clamp-1"
+                                  title={child.text}
+                                >
+                                  {child.text}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </div>
+            </aside>
+          )}
+
+          {/* 文章内容 */}
+          <div className="flex-1 min-w-0">
+            <ArticleDetail article={article} config={themeConfig} />
+            
+            {/* 评论区 */}
+            {isCommentEnabled() && (
+              <div className="px-4 md:px-6">
+                <CommentSection articleId={article.id} />
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     );
   }
 
-  // aether-bloom 和 chroma-dimension 主题使用简化布局
+  // aether-bloom 和 chroma-dimension 主题使用右侧固定目录布局
   if (isAetherBloomTheme || isChromaDimensionTheme) {
+    const tocBgClass = isChromaDimensionTheme 
+      ? 'bg-white/10 dark:bg-white/5 border-white/20 dark:border-white/10' 
+      : 'bg-white/40 dark:bg-slate-900/40 border-stone-200/50 dark:border-slate-700/50';
+    const tocTextClass = isChromaDimensionTheme
+      ? 'text-slate-200 dark:text-slate-300'
+      : 'text-stone-700 dark:text-stone-300';
+    const tocLinkHoverClass = isChromaDimensionTheme
+      ? 'hover:text-pink-400'
+      : 'hover:text-blue-500 dark:hover:text-blue-400';
+
     return (
-      <div>
-        {/* Inline TOC Toggle */}
+      <div className="relative">
+        {/* Mobile TOC Toggle */}
         {toc.length > 0 && (
-          <div className="mb-6">
+          <div className="xl:hidden mb-6">
             <button
               onClick={() => setTocOpen(!tocOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-stone-200/50 dark:border-slate-700/50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm"
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border backdrop-blur-sm ${tocBgClass}`}
             >
-              <span className="font-bold text-sm">📑 文章目录</span>
+              <span className={`font-bold text-sm ${tocTextClass}`}>📑 文章目录</span>
               <svg
-                className={`w-5 h-5 transition-transform ${tocOpen ? 'rotate-180' : ''}`}
+                className={`w-5 h-5 transition-transform ${tocOpen ? 'rotate-180' : ''} ${tocTextClass}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -160,22 +232,186 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
               </svg>
             </button>
             {tocOpen && (
-              <nav className="mt-2 p-4 rounded-xl border border-stone-200/50 dark:border-slate-700/50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm text-sm">
+              <nav className={`mt-2 p-4 rounded-xl border backdrop-blur-sm text-sm ${tocBgClass} ${tocTextClass}`}>
                 {renderTocItems(toc)}
               </nav>
             )}
           </div>
         )}
 
-        {/* 文章内容 */}
-        <ArticleDetail article={article} config={themeConfig} />
-        
-        {/* 评论区 */}
-        {isCommentEnabled() && (
-          <div className="mt-12">
-            <CommentSection articleId={article.id} />
+        <div className="flex gap-8">
+          {/* 文章内容 */}
+          <div className={toc.length > 0 ? 'flex-1 min-w-0' : 'w-full'}>
+            <ArticleDetail article={article} config={themeConfig} />
+            
+            {/* 评论区 */}
+            {isCommentEnabled() && (
+              <div className="mt-12">
+                <CommentSection articleId={article.id} />
+              </div>
+            )}
+          </div>
+
+          {/* 右侧固定目录 - 仅桌面端 */}
+          {toc.length > 0 && (
+            <aside className="hidden xl:block w-64 shrink-0">
+              <div className={`sticky top-24 p-5 rounded-2xl border backdrop-blur-sm ${tocBgClass}`}>
+                <h3 className={`font-bold text-sm mb-4 flex items-center gap-2 ${tocTextClass}`}>
+                  <span>📑</span> 目录
+                </h3>
+                <nav className={`text-sm max-h-[70vh] overflow-y-auto pr-1 ${tocTextClass}`}>
+                  <ul className="space-y-2">
+                    {toc.map((item: TOCItem, index: number) => (
+                      <li key={`${item.id}-${index}`}>
+                        <a
+                          href={`#${item.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const element = document.getElementById(item.id);
+                            if (element) {
+                              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              window.history.pushState(null, '', `#${item.id}`);
+                            }
+                          }}
+                          className={`block py-1 transition-colors opacity-70 hover:opacity-100 ${tocLinkHoverClass} line-clamp-2`}
+                          title={item.text}
+                        >
+                          {item.text}
+                        </a>
+                        {item.children && item.children.length > 0 && (
+                          <ul className="ml-3 mt-1 space-y-1 border-l border-current/20 pl-2">
+                            {item.children.map((child: TOCItem, childIndex: number) => (
+                              <li key={`${child.id}-${childIndex}`}>
+                                <a
+                                  href={`#${child.id}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const element = document.getElementById(child.id);
+                                    if (element) {
+                                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                      window.history.pushState(null, '', `#${child.id}`);
+                                    }
+                                  }}
+                                  className={`block py-0.5 text-xs transition-colors opacity-60 hover:opacity-100 ${tocLinkHoverClass} line-clamp-1`}
+                                  title={child.text}
+                                >
+                                  {child.text}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </div>
+            </aside>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // vibrant 主题使用左侧固定目录布局
+  if (isVibrantTheme) {
+    return (
+      <div className="relative">
+        {/* Mobile TOC Toggle */}
+        {toc.length > 0 && (
+          <div className="xl:hidden mb-6">
+            <button
+              onClick={() => setTocOpen(!tocOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 border-white dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl"
+            >
+              <span className="font-bold text-sm text-slate-700 dark:text-slate-300">📑 文章目录</span>
+              <svg
+                className={`w-5 h-5 transition-transform text-slate-500 ${tocOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {tocOpen && (
+              <nav className="mt-2 p-4 rounded-2xl border-2 border-white dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl text-sm">
+                {renderTocItems(toc)}
+              </nav>
+            )}
           </div>
         )}
+
+        <div className="flex gap-8">
+          {/* 左侧固定目录 - 仅桌面端 */}
+          {toc.length > 0 && (
+            <aside className="hidden xl:block w-56 shrink-0">
+              <div className="sticky top-24 p-5 rounded-[32px] border-2 border-white dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl">
+                <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <span>📑</span> 目录
+                </h3>
+                <nav className="text-sm max-h-[70vh] overflow-y-auto pr-1">
+                  <ul className="space-y-2">
+                    {toc.map((item: TOCItem, index: number) => (
+                      <li key={`${item.id}-${index}`}>
+                        <a
+                          href={`#${item.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const element = document.getElementById(item.id);
+                            if (element) {
+                              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              window.history.pushState(null, '', `#${item.id}`);
+                            }
+                          }}
+                          className="block py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors line-clamp-2"
+                          title={item.text}
+                        >
+                          {item.text}
+                        </a>
+                        {item.children && item.children.length > 0 && (
+                          <ul className="ml-3 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-600 pl-2">
+                            {item.children.map((child: TOCItem, childIndex: number) => (
+                              <li key={`${child.id}-${childIndex}`}>
+                                <a
+                                  href={`#${child.id}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const element = document.getElementById(child.id);
+                                    if (element) {
+                                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                      window.history.pushState(null, '', `#${child.id}`);
+                                    }
+                                  }}
+                                  className="block py-0.5 text-xs text-slate-500 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors line-clamp-1"
+                                  title={child.text}
+                                >
+                                  {child.text}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </div>
+            </aside>
+          )}
+
+          {/* 文章内容 */}
+          <div className="flex-1 min-w-0">
+            <ArticleDetail article={article} config={themeConfig} />
+            
+            {/* 评论区 */}
+            {isCommentEnabled() && (
+              <div className="mt-12">
+                <CommentSection articleId={article.id} />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
