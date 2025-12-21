@@ -54,27 +54,15 @@ const configOptions: ThemeConfigOption[] = [
   },
   {
     key: 'layoutWidth',
-    label: '布局宽度',
+    label: '整体布局宽度',
     type: 'select',
     options: [
-      { value: 'standard', label: '标准 (1200px)' },
-      { value: 'wide', label: '宽屏 (1400px)' },
-      { value: 'full', label: '全宽' },
+      { value: 'standard', label: '标准 (1280px)' },
+      { value: 'wide', label: '宽屏 (1536px)' },
+      { value: 'full', label: '全宽 (100%)' },
     ],
     default: 'standard',
-    description: '页面整体宽度',
-  },
-  {
-    key: 'contentWidth',
-    label: '内容区宽度',
-    type: 'select',
-    options: [
-      { value: 'narrow', label: '窄 (550px)' },
-      { value: 'standard', label: '标准 (650px)' },
-      { value: 'wide', label: '宽 (750px)' },
-    ],
-    default: 'standard',
-    description: '中间信息流的宽度',
+    description: '页面容器的最大宽度',
   },
   {
     key: 'layoutDensity',
@@ -167,7 +155,6 @@ const configOptions: ThemeConfigOption[] = [
 const defaultConfig: ThemeConfig = {
   primaryColor: 'weibo-orange',
   layoutWidth: 'standard',
-  contentWidth: 'standard',
   layoutDensity: 'cozy',
   showRightSidebar: true,
   showTrending: true,
@@ -375,19 +362,11 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
 
   // 布局宽度类
   const layoutWidthMap: Record<string, string> = {
-    standard: 'max-w-[1200px]',
-    wide: 'max-w-[1400px]',
-    full: 'max-w-full px-4',
+    standard: 'max-w-7xl',
+    wide: 'max-w-[1536px]',
+    full: 'w-full',
   };
   const layoutWidthClass = layoutWidthMap[config.layoutWidth as string] || layoutWidthMap.standard;
-
-  // 内容区宽度类
-  const contentWidthMap: Record<string, string> = {
-    narrow: 'max-w-[550px]',
-    standard: 'max-w-[650px]',
-    wide: 'max-w-[750px]',
-  };
-  const contentWidthClass = contentWidthMap[config.contentWidth as string] || contentWidthMap.standard;
 
   return (
     <div className="min-h-screen bg-[#F2F2F2] dark:bg-[#0a0a0a] text-slate-800 dark:text-slate-200 font-sans transition-all duration-300">
@@ -396,7 +375,7 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
         <LeftSidebar config={config} siteName={siteName} />
 
         {/* 中间信息流 */}
-        <main className={`flex-1 ${contentWidthClass} min-h-screen bg-white dark:bg-[#0f0f0f] border-x border-slate-100 dark:border-slate-700`}>
+        <main className="flex-1 min-w-0 min-h-screen bg-white dark:bg-[#0f0f0f] border-x border-slate-100 dark:border-slate-700">
           {/* 移动端顶部状态栏 */}
           <div className="lg:hidden sticky top-0 z-50 bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md px-4 h-14 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
@@ -519,12 +498,13 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 
   return (
     <article className="p-4 md:p-6 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-      <div className="flex gap-3">
+      <div className="flex gap-3 md:gap-4">
         {/* 头像 */}
         <div className="shrink-0">
           <div className="relative">
-            <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
-              <User size={24} className="text-slate-400 dark:text-slate-500" />
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
+              <User size={20} className="text-slate-400 dark:text-slate-500 md:hidden" />
+              <User size={24} className="text-slate-400 dark:text-slate-500 hidden md:block" />
             </div>
             {showVerifiedBadge && (
               <div className="absolute -right-0.5 -bottom-0.5 w-4 h-4 bg-white dark:bg-[#0f0f0f] rounded-full flex items-center justify-center">
@@ -535,21 +515,21 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
         </div>
 
         {/* 内容 */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden">
           {/* 作者信息 */}
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex flex-col">
-              <span className="font-black text-[15px] hover:underline" style={{ color: theme.primary }}>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex flex-col min-w-0">
+              <span className="font-black text-sm md:text-[15px] truncate" style={{ color: theme.primary }}>
                 {article.category?.name || '博主'}
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <span className="text-[10px] md:text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                 <Clock size={10} />
                 {formatDate(article.publishedAt || article.createdAt)}
               </span>
             </div>
             <Link
               href={`/category/${article.category?.id || ''}`}
-              className="px-4 py-1.5 rounded-full border font-bold text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="shrink-0 px-3 md:px-4 py-1 md:py-1.5 rounded-full border font-bold text-[10px] md:text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
               style={{ borderColor: theme.primary, color: theme.primary }}
             >
               {article.category?.name || '分类'}
@@ -558,17 +538,17 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 
           {/* 标题 */}
           <Link href={`/article/${article.slug}`}>
-            <h2 className="text-lg font-black mb-2 hover:underline line-clamp-2 text-slate-800 dark:text-slate-200">
+            <h2 className="text-base md:text-lg font-black mb-2 hover:underline line-clamp-2 text-slate-800 dark:text-slate-200 break-words">
               {article.title}
             </h2>
           </Link>
 
           {/* 摘要 */}
-          <div className="text-[15px] leading-relaxed mb-3 text-slate-600 dark:text-slate-400">
+          <div className="text-sm md:text-[15px] leading-relaxed mb-3 text-slate-600 dark:text-slate-400 break-words">
             {truncate(article.excerpt || article.content, excerptLength)}
             <Link
               href={`/article/${article.slug}`}
-              className="ml-2 font-bold cursor-pointer"
+              className="ml-2 font-bold cursor-pointer whitespace-nowrap"
               style={{ color: theme.primary }}
             >
               ...全文
@@ -593,12 +573,12 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 
           {/* 图片网格 */}
           {images.length > 0 && (
-            <div className={`grid gap-1 mb-4 max-w-[500px] ${getGridClass(images.length)}`}>
+            <div className={`grid gap-1 mb-4 ${getGridClass(images.length)}`}>
               {images.map((src, i) => (
                 <div
                   key={i}
                   className={`relative bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden ${
-                    images.length === 1 ? 'max-w-[400px] aspect-video' : 'aspect-square'
+                    images.length === 1 ? 'aspect-video' : 'aspect-square'
                   }`}
                 >
                   <img
@@ -612,14 +592,14 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
           )}
 
           {/* 工具栏 */}
-          <div className="flex justify-between items-center max-w-md text-slate-500 dark:text-slate-400">
+          <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-1 hover:text-blue-500 transition-colors cursor-pointer">
-              <Repeat size={18} />
-              <span className="text-xs font-bold">{Math.floor(Math.random() * 100) + 10}</span>
+              <Repeat size={16} className="md:w-[18px] md:h-[18px]" />
+              <span className="text-[10px] md:text-xs font-bold">{Math.floor(Math.random() * 100) + 10}</span>
             </div>
             <div className="flex items-center gap-1 hover:text-green-500 transition-colors cursor-pointer">
-              <MessageCircle size={18} />
-              <span className="text-xs font-bold">{Math.floor(Math.random() * 50) + 5}</span>
+              <MessageCircle size={16} className="md:w-[18px] md:h-[18px]" />
+              <span className="text-[10px] md:text-xs font-bold">{Math.floor(Math.random() * 50) + 5}</span>
             </div>
             <div
               className={`flex items-center gap-1 cursor-pointer transition-colors ${
@@ -630,11 +610,11 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
                 setIsLiked(!isLiked);
               }}
             >
-              {isLiked ? <Heart size={18} fill="currentColor" /> : <Heart size={18} />}
-              <span className="text-xs font-bold">{article.viewCount || 0}</span>
+              {isLiked ? <Heart size={16} className="md:w-[18px] md:h-[18px]" fill="currentColor" /> : <Heart size={16} className="md:w-[18px] md:h-[18px]" />}
+              <span className="text-[10px] md:text-xs font-bold">{article.viewCount || 0}</span>
             </div>
             <div className="flex items-center gap-1 hover:text-amber-500 transition-colors cursor-pointer">
-              <Share size={18} />
+              <Share size={16} className="md:w-[18px] md:h-[18px]" />
             </div>
           </div>
         </div>

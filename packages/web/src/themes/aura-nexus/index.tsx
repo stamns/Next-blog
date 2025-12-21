@@ -178,16 +178,16 @@ const vibeThemes: Record<string, { primary: string; secondary: string; bg: strin
     secondary: '#00e5ff',
     bg: 'bg-white',
     darkBg: 'dark:bg-slate-950',
-    text: 'text-slate-900 dark:text-white',
+    text: 'text-slate-900 dark:text-slate-100',
     accent: 'text-red-500',
   },
   'dreamy-soft': {
     primary: '#f472b6',
     secondary: '#818cf8',
     bg: 'bg-indigo-50/20',
-    darkBg: 'dark:bg-indigo-950/20',
-    text: 'text-indigo-900 dark:text-indigo-50',
-    accent: 'text-indigo-400',
+    darkBg: 'dark:bg-indigo-950',
+    text: 'text-indigo-900 dark:text-indigo-100',
+    accent: 'text-indigo-500 dark:text-indigo-400',
   },
   'midnight-acid': {
     primary: '#a855f7',
@@ -202,8 +202,8 @@ const vibeThemes: Record<string, { primary: string; secondary: string; bg: strin
     secondary: '#ffffff',
     bg: 'bg-white',
     darkBg: 'dark:bg-black',
-    text: 'text-black dark:text-white',
-    accent: 'text-slate-400',
+    text: 'text-slate-900 dark:text-slate-100',
+    accent: 'text-slate-500 dark:text-slate-400',
   },
 };
 
@@ -534,24 +534,24 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
             <div className="w-12 h-px bg-current opacity-20" />
             <span className="text-[11px] font-black uppercase tracking-[0.5em] opacity-40">Entry Node</span>
           </div>
-          <h1 className="text-4xl md:text-6xl lg:text-9xl font-black leading-[0.85] tracking-tighter uppercase">
+          <h1 className="text-4xl md:text-6xl lg:text-9xl font-black leading-[0.85] tracking-tighter uppercase text-slate-900 dark:text-white">
             {article.title}
           </h1>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 py-8 md:py-12 border-y border-slate-100 dark:border-slate-900">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 py-8 md:py-12 border-y border-slate-200 dark:border-slate-800">
             <div>
-              <p className="text-[9px] font-black uppercase opacity-30 mb-2">Views</p>
-              <p className="font-black">{article.viewCount || 0}</p>
+              <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 mb-2">Views</p>
+              <p className="font-black text-slate-800 dark:text-slate-200">{article.viewCount || 0}</p>
             </div>
             <div>
-              <p className="text-[9px] font-black uppercase opacity-30 mb-2">Category</p>
-              <p className="font-black">{article.category?.name || 'Uncategorized'}</p>
+              <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 mb-2">Category</p>
+              <p className="font-black text-slate-800 dark:text-slate-200">{article.category?.name || 'Uncategorized'}</p>
             </div>
             <div>
-              <p className="text-[9px] font-black uppercase opacity-30 mb-2">Date</p>
-              <p className="font-black">{formatDate(article.publishedAt || article.createdAt).split(' ')[0]}</p>
+              <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 mb-2">Date</p>
+              <p className="font-black text-slate-800 dark:text-slate-200">{formatDate(article.publishedAt || article.createdAt).split(' ')[0]}</p>
             </div>
             <div className="text-right">
-              <Globe size={20} className="ml-auto opacity-20" />
+              <Globe size={20} className="ml-auto text-slate-300 dark:text-slate-600" />
             </div>
           </div>
         </header>
@@ -597,10 +597,10 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
           <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${theme.accent}`}>
             {article.category?.name || 'Article'}
           </span>
-          <h1 className="text-3xl md:text-4xl lg:text-6xl font-black tracking-tight">
+          <h1 className="text-3xl md:text-4xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white">
             {article.title}
           </h1>
-          <div className="flex flex-wrap justify-center gap-4 text-sm opacity-40 font-bold uppercase tracking-widest">
+          <div className="flex flex-wrap justify-center gap-4 text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
             <span>{formatDate(article.publishedAt || article.createdAt)}</span>
             {article.author && <span>by {article.author.username}</span>}
           </div>
@@ -641,13 +641,13 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
   return (
     <div className="flex flex-col lg:flex-row gap-8 md:gap-16">
       <header className="lg:w-1/3 lg:sticky lg:top-32 h-fit space-y-6 md:space-y-8">
-        <h1 className="text-3xl md:text-4xl lg:text-6xl font-black uppercase leading-none tracking-tighter">
+        <h1 className="text-3xl md:text-4xl lg:text-6xl font-black uppercase leading-none tracking-tighter text-slate-900 dark:text-white">
           {article.title}
         </h1>
         <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center animate-spin" style={{ animationDuration: '20s' }}>
-          <Fingerprint size={32} className="opacity-20" />
+          <Fingerprint size={32} className="text-slate-300 dark:text-slate-600" />
         </div>
-        <div className="space-y-2 opacity-40">
+        <div className="space-y-2 text-slate-500 dark:text-slate-400">
           <p className="text-[9px] font-black uppercase">Meta Info</p>
           <div className="text-sm space-y-1">
             <p>{article.category?.name || 'Uncategorized'}</p>
