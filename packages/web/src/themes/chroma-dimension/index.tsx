@@ -738,8 +738,26 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
             </div>
             <div className="flex-1" />
             <button
+              onClick={async () => {
+                const shareData = {
+                  title: article.title,
+                  text: article.excerpt || article.title,
+                  url: window.location.href,
+                };
+                try {
+                  if (navigator.share) {
+                    await navigator.share(shareData);
+                  } else {
+                    await navigator.clipboard.writeText(window.location.href);
+                    alert('链接已复制到剪贴板');
+                  }
+                } catch (err) {
+                  // 用户取消分享或复制失败
+                }
+              }}
               className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl border-2 ${p.glass} ${p.darkGlass} flex items-center justify-center hover:scale-110 transition-all cursor-pointer`}
               style={{ borderColor: `${p.primary}40` }}
+              title="分享文章"
             >
               <Share2 size={20} className={p.title} />
             </button>
