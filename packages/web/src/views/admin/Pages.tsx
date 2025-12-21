@@ -18,6 +18,7 @@ import {
   TableCell,
 } from '../../components/ui';
 import { formatDate } from '../../lib/utils';
+import { Plus, Trash2, GripVertical } from 'lucide-react';
 
 const BUILTIN_PAGES = [
   { key: 'about', name: '关于页面', path: '/about' },
@@ -358,20 +359,409 @@ export function PagesPage() {
         </form>
       </Modal>
 
-      <Modal isOpen={aboutModalOpen} onClose={() => setAboutModalOpen(false)} title="编辑关于页面" size="lg">
-        <div className="space-y-4">
-          <Textarea
-            label="内容 (Markdown)"
-            value={aboutContent}
-            onChange={(e) => setAboutContent(e.target.value)}
-            className="min-h-[300px]"
-          />
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setAboutModalOpen(false)}>取消</Button>
-            <Button onClick={saveAboutContent}>保存</Button>
-          </div>
-        </div>
+      <Modal isOpen={aboutModalOpen} onClose={() => setAboutModalOpen(false)} title="编辑关于页面" size="xl">
+        <AboutPageEditor
+          content={aboutContent}
+          onChange={setAboutContent}
+          onSave={() => {
+            updateSetting.mutate({ key: 'aboutPageContent', value: aboutContent });
+            setAboutModalOpen(false);
+          }}
+          onCancel={() => setAboutModalOpen(false)}
+        />
       </Modal>
+    </div>
+  );
+}
+
+// 关于页面编辑器组件
+interface AboutConfig {
+  name?: string;
+  avatar?: string;
+  slogan?: string;
+  location?: string;
+  joinDate?: string;
+  email?: string;
+  github?: string;
+  twitter?: string;
+  bio?: string;
+  skills?: Array<{ category: string; icon: string; items: string[] }>;
+  timeline?: Array<{ year: string; title: string; company: string; description: string; type: 'work' | 'education' }>;
+  hobbies?: Array<{ name: string; description: string; icon: string }>;
+  stats?: Array<{ value: string; label: string }>;
+}
+
+const defaultAboutConfig: AboutConfig = {
+  name: '博主名称',
+  slogan: '"代码是写给人看的，顺便给机器执行。"',
+  location: '中国',
+  joinDate: '2024',
+  bio: '你好！欢迎来到我的博客。这里记录着我的技术探索和生活感悟。',
+  skills: [
+    { category: 'Frontend', icon: 'code', items: ['React', 'Next.js', 'TypeScript'] },
+    { category: 'Backend', icon: 'terminal', items: ['Node.js', 'Go', 'PostgreSQL'] },
+  ],
+  timeline: [],
+  hobbies: [
+    { name: '咖啡', description: '寻找城市中最好喝的咖啡', icon: 'coffee' },
+  ],
+  stats: [
+    { value: '10+', label: '开源项目' },
+    { value: '50+', label: '文章发布' },
+  ],
+};
+
+function AboutPageEditor({
+  content,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  content: string;
+  onChange: (content: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<'basic' | 'skills' | 'timeline' | 'hobbies' | 'stats'>('basic');
+  
+  // 解析配置
+  let config: AboutConfig = defaultAboutConfig;
+  try {
+    if (content) {
+      config = { ...defaultAboutConfig, ...JSON.parse(content) };
+    }
+  } catch {
+    // 向后兼容：如果是纯文本，作为 bio
+    if (content && !content.startsWith('{')) {
+      config = { ...defaultAboutConfig, bio: content };
+    }
+  }
+
+  const updateConfig = (updates: Partial<AboutConfig>) => {
+    const newConfig = { ...config, ...updates };
+    onChange(JSON.stringify(newConfig, null, 2));
+  };
+
+  const tabs = [
+    { key: 'basic', label: '基本信息' },
+    { key: 'skills', label: '技术栈' },
+    { key: 'timeline', label: '经历' },
+    { key: 'hobbies', label: '兴趣爱好' },
+    { key: 'stats', label: '统计数据' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Tab 切换 */}
+      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              activeTab === tab.key
+                ? 'bg-primary-600 text-white'
+                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 基本信息 */}
+      {activeTab === 'basic' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="名称" value={config.name || ''} onChange={(e) => updateConfig({ name: e.target.value })} />
+            <Input label="头像URL" value={config.avatar || ''} onChange={(e) => updateConfig({ avatar: e.target.value })} placeholder="https://..." />
+          </div>
+          <Input label="座右铭" value={config.slogan || ''} onChange={(e) => updateConfig({ slogan: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="位置" value={config.location || ''} onChange={(e) => updateConfig({ location: e.target.value })} />
+            <Input label="加入年份" value={config.joinDate || ''} onChange={(e) => updateConfig({ joinDate: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Input label="邮箱" value={config.email || ''} onChange={(e) => updateConfig({ email: e.target.value })} />
+            <Input label="GitHub" value={config.github || ''} onChange={(e) => updateConfig({ github: e.target.value })} placeholder="https://github.com/..." />
+            <Input label="Twitter" value={config.twitter || ''} onChange={(e) => updateConfig({ twitter: e.target.value })} placeholder="https://twitter.com/..." />
+          </div>
+          <Textarea label="个人简介" value={config.bio || ''} onChange={(e) => updateConfig({ bio: e.target.value })} className="min-h-[150px]" />
+        </div>
+      )}
+
+      {/* 技术栈 */}
+      {activeTab === 'skills' && (
+        <div className="space-y-4">
+          {config.skills?.map((skill, idx) => (
+            <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={skill.category}
+                  onChange={(e) => {
+                    const newSkills = [...(config.skills || [])];
+                    newSkills[idx] = { ...skill, category: e.target.value };
+                    updateConfig({ skills: newSkills });
+                  }}
+                  placeholder="分类名称"
+                  className="flex-1"
+                />
+                <select
+                  value={skill.icon}
+                  onChange={(e) => {
+                    const newSkills = [...(config.skills || [])];
+                    newSkills[idx] = { ...skill, icon: e.target.value };
+                    updateConfig({ skills: newSkills });
+                  }}
+                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                >
+                  <option value="code">代码</option>
+                  <option value="terminal">终端</option>
+                  <option value="cpu">CPU</option>
+                </select>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600"
+                  onClick={() => {
+                    const newSkills = config.skills?.filter((_, i) => i !== idx);
+                    updateConfig({ skills: newSkills });
+                  }}
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </div>
+              <Input
+                value={skill.items.join(', ')}
+                onChange={(e) => {
+                  const newSkills = [...(config.skills || [])];
+                  newSkills[idx] = { ...skill, items: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) };
+                  updateConfig({ skills: newSkills });
+                }}
+                placeholder="技能列表，用逗号分隔"
+              />
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => {
+              updateConfig({
+                skills: [...(config.skills || []), { category: '新分类', icon: 'code', items: [] }],
+              });
+            }}
+          >
+            <Plus size={16} className="mr-1" /> 添加分类
+          </Button>
+        </div>
+      )}
+
+      {/* 经历 */}
+      {activeTab === 'timeline' && (
+        <div className="space-y-4">
+          {config.timeline?.map((item, idx) => (
+            <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={item.year}
+                  onChange={(e) => {
+                    const newTimeline = [...(config.timeline || [])];
+                    newTimeline[idx] = { ...item, year: e.target.value };
+                    updateConfig({ timeline: newTimeline });
+                  }}
+                  placeholder="时间段"
+                  className="w-40"
+                />
+                <select
+                  value={item.type}
+                  onChange={(e) => {
+                    const newTimeline = [...(config.timeline || [])];
+                    newTimeline[idx] = { ...item, type: e.target.value as 'work' | 'education' };
+                    updateConfig({ timeline: newTimeline });
+                  }}
+                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                >
+                  <option value="work">工作</option>
+                  <option value="education">教育</option>
+                </select>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 ml-auto"
+                  onClick={() => {
+                    const newTimeline = config.timeline?.filter((_, i) => i !== idx);
+                    updateConfig({ timeline: newTimeline });
+                  }}
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  value={item.title}
+                  onChange={(e) => {
+                    const newTimeline = [...(config.timeline || [])];
+                    newTimeline[idx] = { ...item, title: e.target.value };
+                    updateConfig({ timeline: newTimeline });
+                  }}
+                  placeholder="职位/学历"
+                />
+                <Input
+                  value={item.company}
+                  onChange={(e) => {
+                    const newTimeline = [...(config.timeline || [])];
+                    newTimeline[idx] = { ...item, company: e.target.value };
+                    updateConfig({ timeline: newTimeline });
+                  }}
+                  placeholder="公司/学校"
+                />
+              </div>
+              <Textarea
+                value={item.description}
+                onChange={(e) => {
+                  const newTimeline = [...(config.timeline || [])];
+                  newTimeline[idx] = { ...item, description: e.target.value };
+                  updateConfig({ timeline: newTimeline });
+                }}
+                placeholder="描述"
+                className="min-h-[60px]"
+              />
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => {
+              updateConfig({
+                timeline: [...(config.timeline || []), { year: '', title: '', company: '', description: '', type: 'work' }],
+              });
+            }}
+          >
+            <Plus size={16} className="mr-1" /> 添加经历
+          </Button>
+        </div>
+      )}
+
+      {/* 兴趣爱好 */}
+      {activeTab === 'hobbies' && (
+        <div className="space-y-4">
+          {config.hobbies?.map((hobby, idx) => (
+            <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <select
+                value={hobby.icon}
+                onChange={(e) => {
+                  const newHobbies = [...(config.hobbies || [])];
+                  newHobbies[idx] = { ...hobby, icon: e.target.value };
+                  updateConfig({ hobbies: newHobbies });
+                }}
+                className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="coffee">☕ 咖啡</option>
+                <option value="music">🎵 音乐</option>
+                <option value="camera">📷 摄影</option>
+              </select>
+              <Input
+                value={hobby.name}
+                onChange={(e) => {
+                  const newHobbies = [...(config.hobbies || [])];
+                  newHobbies[idx] = { ...hobby, name: e.target.value };
+                  updateConfig({ hobbies: newHobbies });
+                }}
+                placeholder="名称"
+                className="w-32"
+              />
+              <Input
+                value={hobby.description}
+                onChange={(e) => {
+                  const newHobbies = [...(config.hobbies || [])];
+                  newHobbies[idx] = { ...hobby, description: e.target.value };
+                  updateConfig({ hobbies: newHobbies });
+                }}
+                placeholder="描述"
+                className="flex-1"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600"
+                onClick={() => {
+                  const newHobbies = config.hobbies?.filter((_, i) => i !== idx);
+                  updateConfig({ hobbies: newHobbies });
+                }}
+              >
+                <Trash2 size={16} />
+              </Button>
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => {
+              updateConfig({
+                hobbies: [...(config.hobbies || []), { name: '', description: '', icon: 'coffee' }],
+              });
+            }}
+          >
+            <Plus size={16} className="mr-1" /> 添加爱好
+          </Button>
+        </div>
+      )}
+
+      {/* 统计数据 */}
+      {activeTab === 'stats' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            {config.stats?.map((stat, idx) => (
+              <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <Input
+                  value={stat.value}
+                  onChange={(e) => {
+                    const newStats = [...(config.stats || [])];
+                    newStats[idx] = { ...stat, value: e.target.value };
+                    updateConfig({ stats: newStats });
+                  }}
+                  placeholder="数值"
+                  className="w-24"
+                />
+                <Input
+                  value={stat.label}
+                  onChange={(e) => {
+                    const newStats = [...(config.stats || [])];
+                    newStats[idx] = { ...stat, label: e.target.value };
+                    updateConfig({ stats: newStats });
+                  }}
+                  placeholder="标签"
+                  className="flex-1"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600"
+                  onClick={() => {
+                    const newStats = config.stats?.filter((_, i) => i !== idx);
+                    updateConfig({ stats: newStats });
+                  }}
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              updateConfig({
+                stats: [...(config.stats || []), { value: '', label: '' }],
+              });
+            }}
+          >
+            <Plus size={16} className="mr-1" /> 添加统计
+          </Button>
+        </div>
+      )}
+
+      {/* 操作按钮 */}
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <Button variant="outline" onClick={onCancel}>取消</Button>
+        <Button onClick={onSave}>保存</Button>
+      </div>
     </div>
   );
 }

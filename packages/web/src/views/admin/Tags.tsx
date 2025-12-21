@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from '../../hooks/useTags';
+import type { Tag } from '../../types';
 import {
   Button,
   Card,
@@ -37,7 +38,7 @@ export function TagsPage() {
     }
   };
 
-  const handleEdit = (tag: any) => {
+  const handleEdit = (tag: Tag) => {
     setEditingId(tag.id);
     setForm({ name: tag.name, slug: tag.slug });
     setIsModalOpen(true);
