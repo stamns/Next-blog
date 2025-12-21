@@ -741,7 +741,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
               onClick={async () => {
                 const shareData = {
                   title: article.title,
-                  text: article.excerpt || article.title,
+                  text: (article as any).excerpt || article.title,
                   url: window.location.href,
                 };
                 try {
