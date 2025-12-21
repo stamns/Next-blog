@@ -19,6 +19,7 @@ import prerenderRoutes from './routes/prerender.routes.js';
 import projectRoutes from './routes/project.routes.js';
 import projectCategoryRoutes from './routes/project-category.routes.js';
 import friendLinkRoutes from './routes/friend-link.routes.js';
+import { themeService } from './services/theme.service.js';
 
 const app = express();
 const PORT = process.env.PORT || 3012;
@@ -71,8 +72,16 @@ app.use('/api/friend-links', friendLinkRoutes);
 // Error handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  
+  // 初始化内置主题
+  try {
+    await themeService.initBuiltinThemes();
+    console.log('Built-in themes initialized');
+  } catch (error) {
+    console.error('Failed to initialize themes:', error);
+  }
 });
 
 export default app;

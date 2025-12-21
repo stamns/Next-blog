@@ -152,6 +152,26 @@ export class ThemeService {
           description: '卡片式布局，现代视觉风格',
         }),
       },
+      {
+        name: 'cyber',
+        version: '1.0.0',
+        path: '/themes/cyber',
+        isActive: false,
+        config: JSON.stringify({
+          displayName: '赛博朋克',
+          description: '科技感极光背景，深色调，霓虹高亮，适合技术博客',
+        }),
+      },
+      {
+        name: 'vibrant',
+        version: '1.0.0',
+        path: '/themes/vibrant',
+        isActive: false,
+        config: JSON.stringify({
+          displayName: '活力主题',
+          description: '幻彩流体背景，明亮色调，圆润卡片，充满活力与创意',
+        }),
+      },
     ];
 
     const results: Theme[] = [];
