@@ -8,10 +8,10 @@ const router = Router();
 router.post('/track', async (req: Request, res: Response) => {
   try {
     const result = await analyticsService.track(req.body);
-    res.json(result);
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Track error:', error);
-    res.status(500).json({ error: 'Failed to track' });
+    res.status(500).json({ success: false, error: 'Failed to track' });
   }
 });
 
@@ -26,10 +26,10 @@ router.get('/summary', async (req: Request, res: Response) => {
       startDate ? new Date(startDate as string) : undefined,
       endDate ? new Date(endDate as string) : undefined
     );
-    res.json(summary);
+    res.json({ success: true, data: summary });
   } catch (error) {
     console.error('Get summary error:', error);
-    res.status(500).json({ error: 'Failed to get summary' });
+    res.status(500).json({ success: false, error: 'Failed to get summary' });
   }
 });
 
@@ -46,10 +46,10 @@ router.get('/timeseries', async (req: Request, res: Response) => {
       end,
       (granularity as 'hour' | 'day' | 'week' | 'month') || 'day'
     );
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get timeseries error:', error);
-    res.status(500).json({ error: 'Failed to get timeseries' });
+    res.status(500).json({ success: false, error: 'Failed to get timeseries' });
   }
 });
 
@@ -62,10 +62,10 @@ router.get('/top-pages', async (req: Request, res: Response) => {
     const end = endDate ? new Date(endDate as string) : now;
     
     const data = await analyticsService.getTopPages(start, end, Number(limit) || 10);
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get top pages error:', error);
-    res.status(500).json({ error: 'Failed to get top pages' });
+    res.status(500).json({ success: false, error: 'Failed to get top pages' });
   }
 });
 
@@ -78,10 +78,10 @@ router.get('/top-referers', async (req: Request, res: Response) => {
     const end = endDate ? new Date(endDate as string) : now;
     
     const data = await analyticsService.getTopReferers(start, end, Number(limit) || 10);
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get top referers error:', error);
-    res.status(500).json({ error: 'Failed to get top referers' });
+    res.status(500).json({ success: false, error: 'Failed to get top referers' });
   }
 });
 
@@ -94,10 +94,10 @@ router.get('/devices', async (req: Request, res: Response) => {
     const end = endDate ? new Date(endDate as string) : now;
     
     const data = await analyticsService.getDeviceStats(start, end);
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get device stats error:', error);
-    res.status(500).json({ error: 'Failed to get device stats' });
+    res.status(500).json({ success: false, error: 'Failed to get device stats' });
   }
 });
 
@@ -110,10 +110,10 @@ router.get('/browsers', async (req: Request, res: Response) => {
     const end = endDate ? new Date(endDate as string) : now;
     
     const data = await analyticsService.getBrowserStats(start, end);
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get browser stats error:', error);
-    res.status(500).json({ error: 'Failed to get browser stats' });
+    res.status(500).json({ success: false, error: 'Failed to get browser stats' });
   }
 });
 
@@ -126,10 +126,10 @@ router.get('/countries', async (req: Request, res: Response) => {
     const end = endDate ? new Date(endDate as string) : now;
     
     const data = await analyticsService.getCountryStats(start, end);
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get country stats error:', error);
-    res.status(500).json({ error: 'Failed to get country stats' });
+    res.status(500).json({ success: false, error: 'Failed to get country stats' });
   }
 });
 
@@ -138,10 +138,10 @@ router.get('/realtime', async (req: Request, res: Response) => {
   try {
     const { minutes } = req.query;
     const data = await analyticsService.getRealtimeVisitors(Number(minutes) || 5);
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get realtime visitors error:', error);
-    res.status(500).json({ error: 'Failed to get realtime visitors' });
+    res.status(500).json({ success: false, error: 'Failed to get realtime visitors' });
   }
 });
 
@@ -155,10 +155,10 @@ router.get('/visitors', async (req: Request, res: Response) => {
       startDate ? new Date(startDate as string) : undefined,
       endDate ? new Date(endDate as string) : undefined
     );
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get visitors error:', error);
-    res.status(500).json({ error: 'Failed to get visitors' });
+    res.status(500).json({ success: false, error: 'Failed to get visitors' });
   }
 });
 
@@ -167,12 +167,12 @@ router.get('/visitors/:visitorId', async (req: Request, res: Response) => {
   try {
     const data = await analyticsService.getVisitorDetail(req.params.visitorId);
     if (!data) {
-      return res.status(404).json({ error: 'Visitor not found' });
+      return res.status(404).json({ success: false, error: 'Visitor not found' });
     }
-    res.json(data);
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get visitor detail error:', error);
-    res.status(500).json({ error: 'Failed to get visitor detail' });
+    res.status(500).json({ success: false, error: 'Failed to get visitor detail' });
   }
 });
 

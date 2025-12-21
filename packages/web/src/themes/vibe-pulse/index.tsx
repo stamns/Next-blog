@@ -26,6 +26,11 @@ import {
   Tag,
   Search,
   Layers,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  Calendar,
+  BookOpen,
 } from 'lucide-react';
 import type {
   ThemeComponents,
@@ -64,6 +69,30 @@ const configOptions: ThemeConfigOption[] = [
     ],
     default: 'standard',
     description: '页面容器的最大宽度',
+  },
+  {
+    key: 'articleLayout',
+    label: '文章列表布局',
+    type: 'select',
+    options: [
+      { value: 'single', label: '单栏 (信息流)' },
+      { value: 'double', label: '双栏 (卡片)' },
+      { value: 'triple', label: '三栏 (瀑布流)' },
+    ],
+    default: 'single',
+    description: '首页文章列表的布局方式',
+  },
+  {
+    key: 'cardStyle',
+    label: '卡片风格',
+    type: 'select',
+    options: [
+      { value: 'feed', label: '信息流风格' },
+      { value: 'card', label: '博客卡片风格' },
+      { value: 'minimal', label: '极简风格' },
+    ],
+    default: 'feed',
+    description: '文章卡片的展示风格',
   },
   {
     key: 'layoutDensity',
@@ -112,18 +141,6 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章详情页显示特色图片',
   },
   {
-    key: 'imageGridStyle',
-    label: '图片网格样式',
-    type: 'select',
-    options: [
-      { value: 'auto', label: '自动适应' },
-      { value: 'single', label: '单图大图' },
-      { value: 'grid', label: '九宫格' },
-    ],
-    default: 'auto',
-    description: '文章图片的展示方式',
-  },
-  {
     key: 'excerptLength',
     label: '摘要长度',
     type: 'number',
@@ -163,13 +180,14 @@ const configOptions: ThemeConfigOption[] = [
 const defaultConfig: ThemeConfig = {
   primaryColor: 'weibo-orange',
   layoutWidth: 'standard',
+  articleLayout: 'single',
+  cardStyle: 'feed',
   layoutDensity: 'cozy',
   showRightSidebar: true,
   showTrending: true,
   showAiAssistant: true,
   showFeaturedImage: true,
   showArticleDetailFeaturedImage: true,
-  imageGridStyle: 'auto',
   excerptLength: 150,
   showVerifiedBadge: true,
   navBrandText: '首页',
@@ -185,81 +203,136 @@ const colorMaps: Record<string, { primary: string; secondary: string; bg: string
   'emerald-green': { primary: '#10B981', secondary: '#34D399', bg: '#F0FDF4', light: '#ECFDF5' },
 };
 
+// 菜单项类型
+interface NavMenuItem {
+  id: string;
+  label: string;
+  url: string;
+  type: 'internal' | 'external';
+  sortOrder: number;
+  children?: NavMenuItem[];
+}
 
-// ============ 左侧导航栏 ============
-function LeftSidebar({ config, siteName }: { config: ThemeConfig; siteName: string }) {
-  const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
-  const { navMenu } = useSiteSettingsContext();
+// ============ 左侧导航菜单项（支持多级） ============
+function NavItem({ item, theme, depth = 0 }: { item: NavMenuItem; theme: typeof colorMaps['weibo-orange']; depth?: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasChildren = item.children && item.children.length > 0;
+  const isExternal = item.type === 'external';
 
-  const defaultNavItems = [
-    { icon: <Home size={24} />, label: '首页', href: '/', active: true },
-    { icon: <Hash size={24} />, label: '分类', href: '/categories' },
-    { icon: <Bookmark size={24} />, label: '标签', href: '/tags' },
-    { icon: <User size={24} />, label: '关于', href: '/about' },
-  ];
+  const getIcon = (label: string, index: number) => {
+    const lowerLabel = label.toLowerCase();
+    if (lowerLabel.includes('首页') || lowerLabel.includes('home')) return <Home size={22} />;
+    if (lowerLabel.includes('分类') || lowerLabel.includes('categor')) return <Folder size={22} />;
+    if (lowerLabel.includes('标签') || lowerLabel.includes('tag')) return <Hash size={22} />;
+    if (lowerLabel.includes('关于') || lowerLabel.includes('about')) return <User size={22} />;
+    if (lowerLabel.includes('项目') || lowerLabel.includes('project')) return <Layers size={22} />;
+    if (lowerLabel.includes('友链') || lowerLabel.includes('friend')) return <Heart size={22} />;
+    if (lowerLabel.includes('知识') || lowerLabel.includes('knowledge')) return <BookOpen size={22} />;
+    return <Bookmark size={22} />;
+  };
 
-  // 合并自定义菜单
-  const navItems = navMenu.length > 0
-    ? navMenu.map((item, idx) => ({
-        icon: idx === 0 ? <Home size={24} /> : idx === 1 ? <Hash size={24} /> : <Bookmark size={24} />,
-        label: item.label,
-        href: item.url,
-        active: idx === 0,
-      }))
-    : defaultNavItems;
+  if (hasChildren) {
+    return (
+      <div>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-300 font-medium ${
+            depth > 0 ? 'pl-10' : ''
+          }`}
+        >
+          {depth === 0 && getIcon(item.label, 0)}
+          <span className="flex-1 text-left text-[15px] hidden xl:block">{item.label}</span>
+          {expanded ? (
+            <ChevronDown size={16} className="text-slate-400 hidden xl:block" />
+          ) : (
+            <ChevronRight size={16} className="text-slate-400 hidden xl:block" />
+          )}
+        </button>
+        {expanded && (
+          <div className="ml-2 border-l-2 border-slate-200 dark:border-slate-700">
+            {item.children!.map((child) => (
+              <NavItem key={child.id} item={child} theme={theme} depth={depth + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <aside className="hidden lg:flex flex-col w-[260px] h-screen sticky top-0 py-4 px-4 gap-2 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f0f0f]">
+    <Link
+      href={item.url}
+      target={isExternal ? '_blank' : undefined}
+      rel={isExternal ? 'noopener noreferrer' : undefined}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-300 font-medium ${
+        depth > 0 ? 'pl-10' : ''
+      }`}
+    >
+      {depth === 0 && getIcon(item.label, 0)}
+      <span className="flex-1 text-[15px] hidden xl:block">{item.label}</span>
+      {isExternal && <ExternalLink size={14} className="text-slate-400 hidden xl:block" />}
+    </Link>
+  );
+}
+
+// ============ 左侧导航栏（支持多级菜单） ============
+function LeftSidebar({ config, siteName }: { config: ThemeConfig; siteName: string }) {
+  const theme = colorMaps[config.primaryColor as string] || colorMaps['weibo-orange'];
+  const { navMenu } = useSiteSettingsContext();
+
+  const defaultNavItems: NavMenuItem[] = [
+    { id: '1', label: '首页', url: '/', type: 'internal', sortOrder: 0 },
+    { id: '2', label: '分类', url: '/categories', type: 'internal', sortOrder: 1 },
+    { id: '3', label: '标签', url: '/tags', type: 'internal', sortOrder: 2 },
+    { id: '4', label: '关于', url: '/about', type: 'internal', sortOrder: 3 },
+  ];
+
+  const navItems = navMenu.length > 0 ? navMenu : defaultNavItems;
+
+  return (
+    <aside className="hidden lg:flex flex-col w-[260px] h-screen sticky top-0 py-4 px-3 gap-1 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f0f0f] overflow-y-auto">
       {/* Logo */}
-      <Link href="/" className="mb-6 px-3">
+      <Link href="/" className="mb-4 px-3 flex items-center gap-3">
         <div
-          className="w-12 h-12 flex items-center justify-center rounded-full text-white shadow-lg"
+          className="w-11 h-11 flex items-center justify-center rounded-xl text-white shadow-lg"
           style={{ backgroundColor: theme.primary }}
         >
-          <Sparkles size={28} fill="white" />
+          <Sparkles size={24} fill="white" />
         </div>
+        <span className="text-lg font-black text-slate-800 dark:text-slate-200 hidden xl:block">{siteName}</span>
       </Link>
 
-      {/* 导航项 */}
-      {navItems.map((item, idx) => (
-        <Link
-          key={idx}
-          href={item.href}
-          className={`flex items-center gap-4 px-4 py-3 rounded-full cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-300 ${
-            item.active ? 'font-black' : 'font-medium'
-          }`}
-          style={item.active ? { color: theme.primary } : {}}
-        >
-          {item.icon}
-          <span className="text-lg hidden xl:block">{item.label}</span>
-        </Link>
-      ))}
+      {/* 导航项 - 支持多级菜单 */}
+      <nav className="flex-1 space-y-1">
+        {navItems.map((item) => (
+          <NavItem key={item.id} item={item as NavMenuItem} theme={theme} />
+        ))}
+      </nav>
 
       {/* 发布按钮 */}
       <Link
         href="/about"
-        className="mt-6 w-full py-3 rounded-full text-white font-black text-lg shadow-xl hover:opacity-90 transition-opacity text-center"
+        className="mt-4 w-full py-3 rounded-xl text-white font-bold text-sm shadow-lg hover:opacity-90 transition-opacity text-center"
         style={{ backgroundColor: theme.primary }}
       >
         探索更多
       </Link>
 
       {/* 主题切换 */}
-      <div className="mt-4 flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/50 rounded-full">
-        <span className="text-sm font-bold text-slate-600 dark:text-slate-400 hidden xl:block">主题</span>
+      <div className="mt-3 flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 hidden xl:block">主题</span>
         <ThemeToggle />
       </div>
 
       {/* 底部用户信息 */}
-      <div className="mt-auto p-3 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full cursor-pointer">
-        <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
-          <User size={20} className="text-slate-400 dark:text-slate-500" />
+      <div className="mt-3 p-3 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer">
+        <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
+          <User size={18} className="text-slate-400 dark:text-slate-500" />
         </div>
-        <div className="hidden xl:block flex-1">
-          <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{siteName}</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">@blog_user</p>
+        <div className="hidden xl:block flex-1 min-w-0">
+          <p className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{siteName}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">@blog</p>
         </div>
-        <MoreHorizontal size={18} className="ml-auto text-slate-400 hidden xl:block" />
       </div>
     </aside>
   );
@@ -267,11 +340,10 @@ function LeftSidebar({ config, siteName }: { config: ThemeConfig; siteName: stri
 
 // ============ 右侧边栏 ============
 function RightSidebar({ config }: { config: ThemeConfig }) {
-  const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
+  const theme = colorMaps[config.primaryColor as string] || colorMaps['weibo-orange'];
   const trendingTitle = config.trendingTitle || '实时热搜榜';
   const aiTitle = config.aiAssistantTitle || 'AI Intelligence Node';
 
-  // 模拟热搜数据（实际应从API获取）
   const trendingItems = [
     { label: '技术博客最佳实践', hot: '爆', color: 'bg-red-500' },
     { label: '2025 前端发展趋势', hot: '新', color: 'bg-orange-500' },
@@ -281,35 +353,33 @@ function RightSidebar({ config }: { config: ThemeConfig }) {
   ];
 
   return (
-    <aside className="hidden xl:flex flex-col w-[350px] sticky top-0 h-screen py-4 px-6 gap-6 overflow-y-auto">
-      {/* 搜索框 */}
-      <div className="pt-2">
+    <aside className="hidden xl:flex flex-col w-[320px] sticky top-0 h-screen py-4 px-4 gap-4 overflow-y-auto">
+      <div className="pt-1">
         <SearchBox />
       </div>
 
-      {/* 热搜榜 */}
       {config.showTrending && (
         <div className="bg-slate-50 dark:bg-[#151515] rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700">
           <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-            <h3 className="font-black text-lg flex items-center gap-2 text-slate-800 dark:text-slate-200">
-              <TrendingUp size={18} className="text-red-500" /> {trendingTitle}
+            <h3 className="font-bold text-base flex items-center gap-2 text-slate-800 dark:text-slate-200">
+              <TrendingUp size={16} className="text-red-500" /> {trendingTitle}
             </h3>
-            <Sparkles size={16} className="text-amber-500 animate-pulse" />
+            <Sparkles size={14} className="text-amber-500 animate-pulse" />
           </div>
-          <div className="py-2">
+          <div className="py-1">
             {trendingItems.map((item, i) => (
               <div
                 key={i}
-                className="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer flex justify-between items-center transition-colors"
+                className="px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer flex justify-between items-center transition-colors"
               >
-                <div className="flex gap-4 items-center">
-                  <span className={`font-bold italic ${i < 3 ? 'text-orange-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                <div className="flex gap-3 items-center">
+                  <span className={`font-bold text-sm ${i < 3 ? 'text-orange-500' : 'text-slate-400 dark:text-slate-500'}`}>
                     {i + 1}
                   </span>
-                  <span className="text-[15px] font-bold line-clamp-1 text-slate-700 dark:text-slate-300">{item.label}</span>
+                  <span className="text-sm font-medium line-clamp-1 text-slate-700 dark:text-slate-300">{item.label}</span>
                 </div>
                 {item.hot ? (
-                  <span className={`text-[10px] text-white px-1 rounded-sm font-black ${item.color}`}>
+                  <span className={`text-[10px] text-white px-1.5 py-0.5 rounded font-bold ${item.color}`}>
                     {item.hot}
                   </span>
                 ) : (
@@ -320,7 +390,7 @@ function RightSidebar({ config }: { config: ThemeConfig }) {
           </div>
           <Link
             href="/tags"
-            className="block p-4 text-sm font-medium transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="block p-3 text-sm font-medium transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-700"
             style={{ color: theme.primary }}
           >
             查看更多话题
@@ -328,29 +398,27 @@ function RightSidebar({ config }: { config: ThemeConfig }) {
         </div>
       )}
 
-      {/* AI 助手 */}
       {config.showAiAssistant && (
-        <div className="p-5 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-[#0f0f0f] dark:to-[#151515]">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-[#0f0f0f] dark:to-[#151515]">
+          <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {aiTitle}
             </span>
           </div>
-          <p className="text-sm font-bold leading-relaxed text-slate-700 dark:text-slate-300">
+          <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
             欢迎来到博客！这里汇集了
             <span style={{ color: theme.primary }}> #技术分享# </span>
             和
             <span style={{ color: theme.primary }}> #深度思考# </span>
-            的精彩内容。当前热门话题互动率预测为
-            <span className="text-green-500"> 89%↑</span>。
+            的精彩内容。
           </p>
           <Link
             href="/categories"
-            className="mt-4 flex items-center gap-2 text-xs font-black uppercase tracking-widest"
+            className="mt-3 flex items-center gap-1 text-xs font-bold"
             style={{ color: theme.primary }}
           >
-            探索分类 <ArrowRight size={14} />
+            探索分类 <ArrowRight size={12} />
           </Link>
         </div>
       )}
@@ -361,7 +429,7 @@ function RightSidebar({ config }: { config: ThemeConfig }) {
 
 // ============ 核心布局组件 ============
 function BlogLayout({ children, config = defaultConfig }: { children: ReactNode; config?: ThemeConfig }) {
-  const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
+  const theme = colorMaps[config.primaryColor as string] || colorMaps['weibo-orange'];
   const { settings, navMenu } = useSiteSettingsContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -369,7 +437,6 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   const navBrandText = config.navBrandText || '首页';
   const showRightSidebar = config.showRightSidebar !== false;
 
-  // 布局宽度类
   const layoutWidthMap: Record<string, string> = {
     standard: 'max-w-7xl',
     wide: 'max-w-[1536px]',
@@ -380,180 +447,113 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   return (
     <div className="min-h-screen bg-[#F2F2F2] dark:bg-[#0a0a0a] text-slate-800 dark:text-slate-200 font-sans transition-all duration-300">
       <div className={`${layoutWidthClass} mx-auto flex ${config.layoutWidth === 'full' ? 'px-0' : ''}`}>
-        {/* PC 左侧导航栏 */}
         <LeftSidebar config={config} siteName={siteName} />
 
-        {/* 中间信息流 - 全宽模式下自动扩展 */}
         <main className={`flex-1 min-w-0 min-h-screen bg-white dark:bg-[#0f0f0f] border-x border-slate-100 dark:border-slate-700 ${config.layoutWidth === 'full' ? 'max-w-none' : ''}`}>
-          {/* 移动端顶部状态栏 */}
-          <div className="lg:hidden sticky top-0 z-50 bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md px-4 h-14 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-              <User size={16} className="text-slate-400 dark:text-slate-500" />
-            </div>
-            <div className="flex gap-6 font-bold text-sm text-slate-800 dark:text-slate-200">
-              <span className="border-b-4 pb-3" style={{ borderColor: theme.primary }}>
-                {navBrandText}
-              </span>
-            </div>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1"
-              aria-label="菜单"
-            >
+          {/* 移动端顶部 */}
+          <div className="lg:hidden sticky top-0 z-50 bg-white/90 dark:bg-[#0f0f0f]/90 backdrop-blur-md px-4 h-14 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+            <Link href="/" className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                style={{ backgroundColor: theme.primary }}
+              >
+                <Sparkles size={16} fill="white" />
+              </div>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{siteName}</span>
+            </Link>
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2" aria-label="菜单">
               <MoreHorizontal size={20} className="text-slate-500" />
             </button>
           </div>
 
-          {/* 移动端菜单 - 使用支持多级菜单的组件 */}
           {mobileMenuOpen && (
-            <MobileNavMenu 
+            <MobileNavMenu
               items={navMenu.length > 0 ? navMenu : [
                 { id: '1', label: '首页', url: '/', type: 'internal' as const, sortOrder: 0 },
                 { id: '2', label: '分类', url: '/categories', type: 'internal' as const, sortOrder: 1 },
                 { id: '3', label: '标签', url: '/tags', type: 'internal' as const, sortOrder: 2 },
                 { id: '4', label: '关于', url: '/about', type: 'internal' as const, sortOrder: 3 },
-              ]} 
-              onClose={() => setMobileMenuOpen(false)} 
+              ]}
+              onClose={() => setMobileMenuOpen(false)}
             />
           )}
 
           {/* PC 顶部标题栏 */}
-          <div className="hidden lg:flex sticky top-0 z-50 bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md px-6 h-14 items-center border-b border-slate-100 dark:border-slate-700">
-            <h2 className="text-xl font-black text-slate-800 dark:text-slate-200">{navBrandText}</h2>
+          <div className="hidden lg:flex sticky top-0 z-50 bg-white/90 dark:bg-[#0f0f0f]/90 backdrop-blur-md px-6 h-14 items-center border-b border-slate-100 dark:border-slate-700">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">{navBrandText}</h2>
           </div>
 
-          {/* 内容区域 */}
           <div className={`${config.layoutDensity === 'cozy' ? 'pb-24' : 'pb-16'}`}>
             {children}
           </div>
         </main>
 
-        {/* 右侧边栏 */}
         {showRightSidebar && <RightSidebar config={config} />}
       </div>
 
       {/* 手机端底部导航 */}
-      <footer className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-white/90 dark:bg-[#0f0f0f]/90 backdrop-blur-xl border-t border-slate-100 dark:border-slate-700 flex items-center justify-around z-50">
-        <Link href="/" style={{ color: theme.primary }}>
-          <Home size={26} />
+      <footer className="lg:hidden fixed bottom-0 left-0 w-full h-14 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-xl border-t border-slate-100 dark:border-slate-700 flex items-center justify-around z-50">
+        <Link href="/" style={{ color: theme.primary }}><Home size={22} /></Link>
+        <Link href="/categories" className="text-slate-400 dark:text-slate-500"><Folder size={22} /></Link>
+        <Link href="/tags" className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: theme.primary }}>
+          <Hash size={18} />
         </Link>
-        <Link href="/categories" className="text-slate-400 dark:text-slate-500">
-          <Hash size={26} />
-        </Link>
-        <Link
-          href="/tags"
-          className="w-12 h-10 rounded-xl flex items-center justify-center text-white"
-          style={{ backgroundColor: theme.primary }}
-        >
-          <Bookmark size={20} />
-        </Link>
-        <Link href="/about" className="text-slate-400 dark:text-slate-500">
-          <User size={26} />
-        </Link>
-        <Link href="/search" className="text-slate-400 dark:text-slate-500">
-          <Search size={26} />
-        </Link>
+        <Link href="/about" className="text-slate-400 dark:text-slate-500"><User size={22} /></Link>
+        <Link href="/search" className="text-slate-400 dark:text-slate-500"><Search size={22} /></Link>
       </footer>
     </div>
   );
 }
 
-
-// ============ 文章卡片：Feed 项 ============
-function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { config?: ThemeConfig }) {
+// ============ 信息流风格卡片 ============
+function FeedStyleCard({ article, config, theme }: { article: ArticleCardProps['article']; config: ThemeConfig; theme: typeof colorMaps['weibo-orange'] }) {
   const [isLiked, setIsLiked] = useState(false);
-  const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
-  const excerptLength = config.excerptLength || 150;
+  const excerptLength = (config.excerptLength as number) || 150;
   const showFeaturedImage = config.showFeaturedImage !== false;
   const showVerifiedBadge = config.showVerifiedBadge !== false;
-  const imageGridStyle = config.imageGridStyle || 'auto';
-
-  // 生成图片数组（基于文章ID的稳定哈希）
-  const images = useMemo(() => {
-    if (!showFeaturedImage) return [];
-    if (article.featuredImage) return [article.featuredImage];
-    
-    // 如果没有特色图，根据配置决定是否显示占位图
-    if (imageGridStyle === 'single') {
-      return [`https://picsum.photos/seed/${article.id}/800/400`];
-    }
-    return [];
-  }, [article.id, article.featuredImage, showFeaturedImage, imageGridStyle]);
-
-  // 计算网格列数
-  const getGridClass = (count: number) => {
-    if (imageGridStyle === 'single' || count === 1) return 'grid-cols-1';
-    if (count === 2 || count === 4) return 'grid-cols-2';
-    return 'grid-cols-3';
-  };
 
   return (
-    <article className="p-4 md:p-6 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-      <div className="flex gap-3 md:gap-4">
-        {/* 头像 */}
-        <div className="shrink-0">
-          <div className="relative">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
-              <User size={20} className="text-slate-400 dark:text-slate-500 md:hidden" />
-              <User size={24} className="text-slate-400 dark:text-slate-500 hidden md:block" />
-            </div>
-            {showVerifiedBadge && (
-              <div className="absolute -right-0.5 -bottom-0.5 w-4 h-4 bg-white dark:bg-[#0f0f0f] rounded-full flex items-center justify-center">
-                <CheckCircle2 size={12} fill={theme.primary} className="text-white" />
-              </div>
-            )}
+    <article className="p-4 md:p-5 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+      <div className="flex gap-3">
+        <div className="shrink-0 relative">
+          <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
+            <User size={18} className="text-slate-400 dark:text-slate-500" />
           </div>
+          {showVerifiedBadge && (
+            <div className="absolute -right-0.5 -bottom-0.5 w-4 h-4 bg-white dark:bg-[#0f0f0f] rounded-full flex items-center justify-center">
+              <CheckCircle2 size={12} fill={theme.primary} className="text-white" />
+            </div>
+          )}
         </div>
 
-        {/* 内容 */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          {/* 作者信息 */}
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <div className="flex flex-col min-w-0">
-              <span className="font-black text-sm md:text-[15px] truncate" style={{ color: theme.primary }}>
-                {article.category?.name || '博主'}
-              </span>
-              <span className="text-[10px] md:text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                <Clock size={10} />
-                {formatDate(article.publishedAt || article.createdAt)}
-              </span>
-            </div>
-            <Link
-              href={`/category/${article.category?.id || ''}`}
-              className="shrink-0 px-3 md:px-4 py-1 md:py-1.5 rounded-full border font-bold text-[10px] md:text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
-              style={{ borderColor: theme.primary, color: theme.primary }}
-            >
-              {article.category?.name || '分类'}
-            </Link>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-bold text-sm" style={{ color: theme.primary }}>
+              {article.category?.name || '博主'}
+            </span>
+            <span className="text-xs text-slate-400">·</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {formatDate(article.publishedAt || article.createdAt)}
+            </span>
           </div>
 
-          {/* 标题 */}
           <Link href={`/article/${article.slug}`}>
-            <h2 className="text-base md:text-lg font-black mb-2 hover:underline line-clamp-2 text-slate-800 dark:text-slate-200 break-words">
+            <h2 className="text-base font-bold mb-2 hover:underline line-clamp-2 text-slate-800 dark:text-slate-200">
               {article.title}
             </h2>
           </Link>
 
-          {/* 摘要 */}
-          <div className="text-sm md:text-[15px] leading-relaxed mb-3 text-slate-600 dark:text-slate-400 break-words">
+          <p className="text-sm leading-relaxed mb-3 text-slate-600 dark:text-slate-400 line-clamp-3">
             {truncate(article.excerpt || article.content, excerptLength)}
-            <Link
-              href={`/article/${article.slug}`}
-              className="ml-2 font-bold cursor-pointer whitespace-nowrap"
-              style={{ color: theme.primary }}
-            >
-              ...全文
-            </Link>
-          </div>
+          </p>
 
-          {/* 标签 */}
           {article.tags && article.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-3">
               {article.tags.slice(0, 3).map((tag) => (
                 <Link
                   key={tag.id}
                   href={`/tag/${tag.id}`}
-                  className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  className="text-xs font-medium px-2 py-0.5 rounded-full"
                   style={{ backgroundColor: `${theme.primary}15`, color: theme.primary }}
                 >
                   #{tag.name}
@@ -562,56 +562,27 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
             </div>
           )}
 
-          {/* 图片网格 */}
-          {images.length > 0 && (
-            <div className={`grid gap-1 mb-4 ${getGridClass(images.length)}`}>
-              {images.map((src, i) => (
-                <div
-                  key={i}
-                  className={`relative bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden ${
-                    images.length === 1 ? 'aspect-video' : 'aspect-square'
-                  }`}
-                >
-                  <img
-                    src={src}
-                    className="w-full h-full object-cover hover:opacity-90 transition-opacity"
-                    alt={article.title}
-                  />
-                </div>
-              ))}
+          {showFeaturedImage && article.featuredImage && (
+            <div className="mb-3 rounded-xl overflow-hidden">
+              <img src={article.featuredImage} alt={article.title} className="w-full aspect-video object-cover" />
             </div>
           )}
 
-          {/* 工具栏 - 使用真实数据 */}
-          <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-1 hover:text-blue-500 transition-colors cursor-pointer opacity-50" title="转发功能开发中">
-              <Repeat size={16} className="md:w-[18px] md:h-[18px]" />
-              <span className="text-[10px] md:text-xs font-bold">-</span>
-            </div>
-            <div className="flex items-center gap-1 hover:text-green-500 transition-colors cursor-pointer opacity-50" title="评论功能">
-              <MessageCircle size={16} className="md:w-[18px] md:h-[18px]" />
-              <span className="text-[10px] md:text-xs font-bold">-</span>
-            </div>
-            <div
-              className={`flex items-center gap-1 cursor-pointer transition-colors ${
-                isLiked ? 'text-red-500' : 'hover:text-red-500'
-              }`}
-              onClick={(e) => {
-                e.preventDefault();
-                setIsLiked(!isLiked);
-              }}
-              title="点赞"
+          <div className="flex justify-between items-center text-slate-400 dark:text-slate-500 text-xs">
+            <button className="flex items-center gap-1 hover:text-blue-500 transition-colors">
+              <Repeat size={14} /> <span>转发</span>
+            </button>
+            <button className="flex items-center gap-1 hover:text-green-500 transition-colors">
+              <MessageCircle size={14} /> <span>评论</span>
+            </button>
+            <button
+              className={`flex items-center gap-1 transition-colors ${isLiked ? 'text-red-500' : 'hover:text-red-500'}`}
+              onClick={() => setIsLiked(!isLiked)}
             >
-              {isLiked ? <Heart size={16} className="md:w-[18px] md:h-[18px]" fill="currentColor" /> : <Heart size={16} className="md:w-[18px] md:h-[18px]" />}
-              <span className="text-[10px] md:text-xs font-bold">{article.viewCount || 0}</span>
-            </div>
-            <Link 
-              href={`/article/${article.slug}`}
-              className="flex items-center gap-1 hover:text-amber-500 transition-colors cursor-pointer"
-              title="查看详情"
-            >
-              <Eye size={16} className="md:w-[18px] md:h-[18px]" />
-              <span className="text-[10px] md:text-xs font-bold">{article.viewCount || 0}</span>
+              <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} /> <span>{article.viewCount || 0}</span>
+            </button>
+            <Link href={`/article/${article.slug}`} className="flex items-center gap-1 hover:text-amber-500 transition-colors">
+              <Eye size={14} /> <span>{article.viewCount || 0}</span>
             </Link>
           </div>
         </div>
@@ -620,91 +591,244 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
   );
 }
 
+// ============ 博客卡片风格 ============
+function BlogCardStyle({ article, config, theme }: { article: ArticleCardProps['article']; config: ThemeConfig; theme: typeof colorMaps['weibo-orange'] }) {
+  const excerptLength = (config.excerptLength as number) || 120;
+  const showFeaturedImage = config.showFeaturedImage !== false;
 
-// ============ 文章详情 ============
+  return (
+    <article className="bg-white dark:bg-[#151515] rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:shadow-lg transition-all group">
+      {showFeaturedImage && article.featuredImage && (
+        <div className="aspect-video overflow-hidden">
+          <img
+            src={article.featuredImage}
+            alt={article.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+      )}
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-2">
+          {article.category && (
+            <Link
+              href={`/category/${article.category.id}`}
+              className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: `${theme.primary}15`, color: theme.primary }}
+            >
+              {article.category.name}
+            </Link>
+          )}
+          <span className="text-xs text-slate-400 flex items-center gap-1">
+            <Calendar size={12} />
+            {formatDate(article.publishedAt || article.createdAt).split(' ')[0]}
+          </span>
+        </div>
+
+        <Link href={`/article/${article.slug}`}>
+          <h2 className="text-lg font-bold mb-2 line-clamp-2 text-slate-800 dark:text-slate-200 group-hover:underline">
+            {article.title}
+          </h2>
+        </Link>
+
+        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
+          {truncate(article.excerpt || article.content, excerptLength)}
+        </p>
+
+        <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1"><Eye size={12} /> {article.viewCount || 0}</span>
+          </div>
+          <Link
+            href={`/article/${article.slug}`}
+            className="font-bold flex items-center gap-1"
+            style={{ color: theme.primary }}
+          >
+            阅读全文 <ArrowRight size={12} />
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+// ============ 极简风格卡片 ============
+function MinimalCardStyle({ article, config, theme }: { article: ArticleCardProps['article']; config: ThemeConfig; theme: typeof colorMaps['weibo-orange'] }) {
+  return (
+    <article className="py-4 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors px-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            {article.category && (
+              <span className="text-xs font-medium" style={{ color: theme.primary }}>
+                {article.category.name}
+              </span>
+            )}
+            <span className="text-xs text-slate-400">
+              {formatDate(article.publishedAt || article.createdAt).split(' ')[0]}
+            </span>
+          </div>
+          <Link href={`/article/${article.slug}`}>
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 hover:underline line-clamp-1">
+              {article.title}
+            </h2>
+          </Link>
+        </div>
+        <span className="text-xs text-slate-400 flex items-center gap-1 shrink-0">
+          <Eye size={12} /> {article.viewCount || 0}
+        </span>
+      </div>
+    </article>
+  );
+}
+
+
+// ============ 文章卡片（根据配置选择风格和布局） ============
+function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { config?: ThemeConfig }) {
+  const theme = colorMaps[config.primaryColor as string] || colorMaps['weibo-orange'];
+  const cardStyle = config.cardStyle || 'feed';
+
+  if (cardStyle === 'card') {
+    return <BlogCardStyle article={article} config={config} theme={theme} />;
+  }
+  if (cardStyle === 'minimal') {
+    return <MinimalCardStyle article={article} config={config} theme={theme} />;
+  }
+  return <FeedStyleCard article={article} config={config} theme={theme} />;
+}
+
+// ============ 文章列表容器（支持多栏布局） ============
+export function ArticleListWrapper({ children, config = defaultConfig }: { children: ReactNode; config?: ThemeConfig }) {
+  const articleLayout = config.articleLayout || 'single';
+  const cardStyle = config.cardStyle || 'feed';
+
+  // 信息流风格只支持单栏
+  if (cardStyle === 'feed') {
+    return <div className="divide-y divide-slate-100 dark:divide-slate-700">{children}</div>;
+  }
+
+  // 极简风格只支持单栏
+  if (cardStyle === 'minimal') {
+    return <div>{children}</div>;
+  }
+
+  // 博客卡片风格支持多栏
+  const gridClassMap: Record<string, string> = {
+    single: 'grid-cols-1',
+    double: 'grid-cols-1 md:grid-cols-2',
+    triple: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  };
+  const gridClass = gridClassMap[articleLayout as string] || 'grid-cols-1';
+
+  return <div className={`grid ${gridClass} gap-4 p-4`}>{children}</div>;
+}
+
+// ============ 文章详情（博客风格） ============
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
-  const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
+  const theme = colorMaps[config.primaryColor as string] || colorMaps['weibo-orange'];
   const showAiAssistant = config.showAiAssistant !== false;
   const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   return (
-    <article className="animate-in fade-in duration-700">
-      <div className="p-4 md:p-8 space-y-8">
-        {/* 头部 */}
-        <header className="space-y-6">
-          <h1 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-slate-800 dark:text-slate-100">
+    <article className="animate-in fade-in duration-500">
+      <div className="p-4 md:p-8">
+        {/* 文章头部 */}
+        <header className="mb-8">
+          {/* 分类标签 */}
+          {article.category && (
+            <Link
+              href={`/category/${article.category.id}`}
+              className="inline-flex items-center gap-1.5 text-sm font-bold mb-4"
+              style={{ color: theme.primary }}
+            >
+              <Folder size={14} />
+              {article.category.name}
+            </Link>
+          )}
+
+          {/* 标题 */}
+          <h1 className="text-2xl md:text-4xl font-black leading-tight text-slate-800 dark:text-slate-100 mb-6">
             {article.title}
           </h1>
 
-          {/* 作者信息栏 */}
+          {/* 作者信息 */}
           <div className="flex items-center gap-4 py-4 border-y border-slate-100 dark:border-slate-700">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
               <User size={24} className="text-slate-400 dark:text-slate-500" />
             </div>
             <div className="flex-1">
-              <p className="font-black text-lg text-slate-800 dark:text-slate-200">{article.author?.username || '博主'}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                <Clock size={12} />
-                {formatDate(article.publishedAt || article.createdAt)}
-                <span>·</span>
-                <Eye size={12} />
-                {article.viewCount || 0} 阅读
-              </p>
+              <p className="font-bold text-slate-800 dark:text-slate-200">{article.author?.username || '博主'}</p>
+              <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                <span className="flex items-center gap-1">
+                  <Calendar size={12} />
+                  {formatDate(article.publishedAt || article.createdAt)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Eye size={12} />
+                  {article.viewCount || 0} 阅读
+                </span>
+              </div>
             </div>
-            {article.category && (
-              <Link
-                href={`/category/${article.category.id}`}
-                className="px-6 py-2 rounded-full text-white font-black text-sm"
-                style={{ backgroundColor: theme.primary }}
-              >
-                {article.category.name}
-              </Link>
-            )}
+            <button
+              onClick={async () => {
+                try {
+                  if (navigator.share) {
+                    await navigator.share({ title: article.title, url: window.location.href });
+                  } else {
+                    await navigator.clipboard.writeText(window.location.href);
+                    alert('链接已复制');
+                  }
+                } catch {}
+              }}
+              className="p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <Share size={18} className="text-slate-500" />
+            </button>
           </div>
         </header>
 
         {/* 特色图片 */}
         {showArticleDetailFeaturedImage && article.featuredImage && (
-          <div className="rounded-2xl overflow-hidden">
+          <div className="rounded-2xl overflow-hidden mb-8">
             <img src={article.featuredImage} alt={article.title} className="w-full aspect-video object-cover" />
           </div>
         )}
 
-        {/* AI 内容摘要 */}
+        {/* AI 摘要 */}
         {showAiAssistant && (
-          <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 relative overflow-hidden">
-            <div
-              className="absolute top-0 left-0 w-1 h-full"
-              style={{ backgroundColor: theme.primary }}
-            />
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles size={16} className="text-amber-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                AI 内容解析
+          <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border-l-4 mb-8" style={{ borderColor: theme.primary }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles size={14} className="text-amber-500" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                AI 内容摘要
               </span>
             </div>
-            <p className="text-sm font-bold italic text-slate-600 dark:text-slate-400">
-              "本文深度探讨了关于「{article.title}」的核心议题，
-              {article.category && `属于${article.category.name}分类，`}
-              建议从多角度切入思考。"
+            <p className="text-sm italic text-slate-600 dark:text-slate-400">
+              本文探讨了「{article.title}」的核心内容
+              {article.category && `，属于${article.category.name}分类`}。
             </p>
           </div>
         )}
 
-        {/* 正文内容 */}
+        {/* 正文 */}
         <div
-          className="prose prose-lg dark:prose-invert max-w-none prose-p:leading-relaxed prose-p:text-slate-700 dark:prose-p:text-slate-300 prose-img:rounded-2xl prose-pre:rounded-2xl prose-headings:font-black prose-headings:text-slate-800 dark:prose-headings:text-slate-200"
+          className="prose prose-slate dark:prose-invert max-w-none 
+            prose-headings:font-bold prose-headings:text-slate-800 dark:prose-headings:text-slate-200
+            prose-p:text-slate-600 dark:prose-p:text-slate-400 prose-p:leading-relaxed
+            prose-a:no-underline hover:prose-a:underline
+            prose-img:rounded-xl prose-pre:rounded-xl prose-pre:bg-slate-900
+            prose-code:text-sm prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded"
+          style={{ '--tw-prose-links': theme.primary } as React.CSSProperties}
           dangerouslySetInnerHTML={{ __html: article.htmlContent || article.content }}
         />
 
         {/* 标签 */}
         {article.tags && article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-6 border-t border-slate-100 dark:border-slate-700">
+          <div className="flex flex-wrap gap-2 pt-8 mt-8 border-t border-slate-100 dark:border-slate-700">
             {article.tags.map((tag) => (
               <Link
                 key={tag.id}
                 href={`/tag/${tag.id}`}
-                className="px-4 py-2 rounded-full text-sm font-bold transition-colors"
+                className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
                 style={{ backgroundColor: `${theme.primary}15`, color: theme.primary }}
               >
                 #{tag.name}
@@ -713,24 +837,25 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
           </div>
         )}
 
-        {/* 底部互动栏 */}
-        <footer className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-          <div className="flex gap-8 md:gap-12">
-            <div className="flex flex-col items-center gap-1 group cursor-pointer transition-colors text-slate-500 dark:text-slate-400 hover:text-red-500">
-              <Heart size={28} />
-              <span className="text-xs font-black">{article.viewCount || 0} 赞</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 group cursor-pointer transition-colors text-slate-500 dark:text-slate-400 hover:text-blue-500">
-              <Repeat size={28} />
-              <span className="text-xs font-black">转发</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 group cursor-pointer transition-colors text-slate-500 dark:text-slate-400 hover:text-green-500">
-              <MessageCircle size={28} />
-              <span className="text-xs font-black">评论</span>
-            </div>
-          </div>
-          <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-full cursor-pointer hover:rotate-12 transition-all text-slate-600 dark:text-slate-400">
-            <Share size={24} />
+        {/* 底部互动 */}
+        <footer className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-700">
+          <div className="flex items-center justify-center gap-8">
+            <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-red-500 transition-colors">
+              <Heart size={24} />
+              <span className="text-xs font-medium">点赞</span>
+            </button>
+            <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-500 transition-colors">
+              <Repeat size={24} />
+              <span className="text-xs font-medium">转发</span>
+            </button>
+            <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-green-500 transition-colors">
+              <MessageCircle size={24} />
+              <span className="text-xs font-medium">评论</span>
+            </button>
+            <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-amber-500 transition-colors">
+              <Bookmark size={24} />
+              <span className="text-xs font-medium">收藏</span>
+            </button>
           </div>
         </footer>
       </div>
@@ -738,12 +863,10 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
   );
 }
 
-
 // ============ 分类列表 ============
 function CategoryList({ categories, config = defaultConfig }: CategoryListProps & { config?: ThemeConfig }) {
-  const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
+  const theme = colorMaps[config.primaryColor as string] || colorMaps['weibo-orange'];
 
-  // 展平分类
   const flatCategories: { category: CategoryListProps['categories'][0]; isChild: boolean }[] = [];
   categories.forEach((category) => {
     flatCategories.push({ category, isChild: false });
@@ -754,44 +877,42 @@ function CategoryList({ categories, config = defaultConfig }: CategoryListProps 
 
   return (
     <div>
-      {/* 页面标题 */}
-      <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-        <div className="flex items-center gap-3 mb-2">
-          <Folder size={24} style={{ color: theme.primary }} />
-          <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200">分类目录</h1>
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+        <div className="flex items-center gap-2 mb-1">
+          <Folder size={20} style={{ color: theme.primary }} />
+          <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">分类目录</h1>
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">浏览所有文章分类</p>
       </div>
 
-      {/* 分类列表 */}
       <div className="divide-y divide-slate-100 dark:divide-slate-700">
         {flatCategories.map(({ category, isChild }, i) => (
           <Link
             key={category.id}
             href={`/category/${category.slug}`}
-            className={`flex items-center justify-between p-4 md:p-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
-              isChild ? 'pl-8 md:pl-12' : ''
+            className={`flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+              isChild ? 'pl-10' : ''
             }`}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-lg"
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm"
                 style={{ backgroundColor: theme.primary }}
               >
                 {isChild ? '└' : String(i + 1).padStart(2, '0')}
               </div>
               <div>
-                <h3 className="font-black text-lg text-slate-800 dark:text-slate-200">{category.name}</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-200">{category.name}</h3>
                 {category.description && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{category.description}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{category.description}</p>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-black text-slate-300 dark:text-slate-600">
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold text-slate-300 dark:text-slate-600">
                 {category._count?.articles || 0}
               </span>
-              <ArrowRight size={20} className="text-slate-400 dark:text-slate-500" />
+              <ArrowRight size={16} className="text-slate-400" />
             </div>
           </Link>
         ))}
@@ -799,8 +920,8 @@ function CategoryList({ categories, config = defaultConfig }: CategoryListProps 
 
       {flatCategories.length === 0 && (
         <div className="p-12 text-center">
-          <Layers size={48} className="mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-          <p className="text-lg font-bold text-slate-400 dark:text-slate-500">暂无分类</p>
+          <Layers size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+          <p className="text-slate-400 dark:text-slate-500">暂无分类</p>
         </div>
       )}
     </div>
@@ -809,42 +930,38 @@ function CategoryList({ categories, config = defaultConfig }: CategoryListProps 
 
 // ============ 标签列表 ============
 function TagList({ tags, config = defaultConfig }: TagListProps & { config?: ThemeConfig }) {
-  const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
+  const theme = colorMaps[config.primaryColor as string] || colorMaps['weibo-orange'];
 
   return (
     <div>
-      {/* 页面标题 */}
-      <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-        <div className="flex items-center gap-3 mb-2">
-          <Tag size={24} style={{ color: theme.primary }} />
-          <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200">标签云</h1>
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+        <div className="flex items-center gap-2 mb-1">
+          <Tag size={20} style={{ color: theme.primary }} />
+          <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">标签云</h1>
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">探索所有话题标签</p>
       </div>
 
-      {/* 标签云 */}
-      <div className="p-6">
-        <div className="flex flex-wrap gap-3">
+      <div className="p-5">
+        <div className="flex flex-wrap gap-2">
           {tags.map((tag, index) => {
             const count = tag._count?.articles || 0;
-            const size = count > 10 ? 'text-lg px-5 py-2.5' : count > 5 ? 'text-base px-4 py-2' : 'text-sm px-3 py-1.5';
+            const size = count > 10 ? 'text-base px-4 py-2' : count > 5 ? 'text-sm px-3 py-1.5' : 'text-xs px-2.5 py-1';
             const isHot = index < 3;
-            
+
             return (
               <Link
                 key={tag.id}
                 href={`/tag/${tag.slug}`}
-                className={`${size} rounded-full font-bold transition-all hover:scale-105 flex items-center gap-2`}
+                className={`${size} rounded-full font-medium transition-all hover:scale-105 flex items-center gap-1`}
                 style={{
                   backgroundColor: isHot ? theme.primary : `${theme.primary}15`,
                   color: isHot ? 'white' : theme.primary,
                 }}
               >
                 #{tag.name}
-                <span className={`text-xs ${isHot ? 'text-white/80' : ''}`} style={!isHot ? { color: theme.primary, opacity: 0.7 } : {}}>
-                  ({count})
-                </span>
-                {isHot && <TrendingUp size={14} />}
+                <span className={`text-xs ${isHot ? 'opacity-80' : 'opacity-70'}`}>({count})</span>
+                {isHot && <TrendingUp size={12} />}
               </Link>
             );
           })}
@@ -853,8 +970,8 @@ function TagList({ tags, config = defaultConfig }: TagListProps & { config?: The
 
       {tags.length === 0 && (
         <div className="p-12 text-center">
-          <Hash size={48} className="mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-          <p className="text-lg font-bold text-slate-400 dark:text-slate-500">暂无标签</p>
+          <Hash size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+          <p className="text-slate-400 dark:text-slate-500">暂无标签</p>
         </div>
       )}
     </div>
@@ -863,45 +980,37 @@ function TagList({ tags, config = defaultConfig }: TagListProps & { config?: The
 
 // ============ 搜索结果 ============
 function SearchResults({ articles, total, query, config = defaultConfig }: SearchResultProps & { config?: ThemeConfig }) {
-  const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
+  const theme = colorMaps[config.primaryColor as string] || colorMaps['weibo-orange'];
 
   if (!query) return null;
 
   return (
     <div>
-      {/* 搜索标题 */}
-      <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-        <div className="flex items-center gap-3 mb-2">
-          <Search size={24} style={{ color: theme.primary }} />
-          <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200">搜索结果</h1>
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+        <div className="flex items-center gap-2 mb-1">
+          <Search size={20} style={{ color: theme.primary }} />
+          <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">搜索结果</h1>
         </div>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           找到 <span style={{ color: theme.primary }} className="font-bold">{total}</span> 篇关于
           "<span style={{ color: theme.primary }} className="font-bold">{query}</span>" 的文章
         </p>
       </div>
 
-      {/* 结果列表 */}
-      <div className="divide-y divide-slate-100 dark:divide-slate-700">
+      <div>
         {articles.map((article) => (
           <ArticleCard
             key={article.id}
-            article={{
-              ...article,
-              featuredImage: null,
-              category: null,
-              viewCount: 0,
-            }}
-            config={config}
+            article={{ ...article, featuredImage: null, category: null, viewCount: 0 }}
+            config={{ ...config, cardStyle: 'minimal' }}
           />
         ))}
       </div>
 
       {articles.length === 0 && (
         <div className="p-12 text-center">
-          <Search size={48} className="mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-          <p className="text-lg font-bold text-slate-400 dark:text-slate-500">未找到相关文章</p>
-          <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">尝试使用其他关键词搜索</p>
+          <Search size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+          <p className="text-slate-400 dark:text-slate-500">未找到相关文章</p>
         </div>
       )}
     </div>
@@ -912,7 +1021,7 @@ function SearchResults({ articles, total, query, config = defaultConfig }: Searc
 export const VibePulseTheme: ThemeComponents = {
   name: 'vibe-pulse',
   displayName: '微博风格',
-  description: '社交信息流布局，左侧导航、中间信息流、右侧热搜与AI助手的完美结合',
+  description: '社交信息流布局，支持多级菜单、多栏布局、多种卡片风格',
   configOptions,
   defaultConfig,
   BlogLayout,

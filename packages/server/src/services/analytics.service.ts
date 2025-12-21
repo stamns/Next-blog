@@ -81,12 +81,11 @@ export const analyticsService = {
         },
       });
     } else {
-      // 更新访客最后访问时间和访问次数
+      // 更新访客最后访问时间
       visitor = await prisma.visitor.update({
         where: { visitorId },
         data: {
           lastVisit: new Date(),
-          visitCount: { increment: eventType === 'pageview' ? 0 : 0 }, // 只在新会话时增加
           // 更新设备信息（可能有变化）
           ...(browser && { browser }),
           ...(browserVer && { browserVer }),
@@ -99,15 +98,23 @@ export const analyticsService = {
       });
     }
 
-    // 2. 处理会话
+    // 2. 处理会话 - 使用前端sessionId作为标识符查找最近的会话
     let session;
-    if (sessionId) {
-      session = await prisma.visitorSession.findUnique({
-        where: { id: sessionId },
-      });
-    }
+    
+    // 查找该访客最近30分钟内的活跃会话
+    const sessionTimeout = 30 * 60 * 1000; // 30分钟
+    const recentSession = await prisma.visitorSession.findFirst({
+      where: {
+        visitorId: visitor.id,
+        endTime: null, // 未结束的会话
+        startTime: { gte: new Date(Date.now() - sessionTimeout) },
+      },
+      orderBy: { startTime: 'desc' },
+    });
 
-    if (!session && eventType === 'pageview') {
+    if (recentSession) {
+      session = recentSession;
+    } else if (eventType === 'pageview') {
       // 创建新会话
       session = await prisma.visitorSession.create({
         data: {
