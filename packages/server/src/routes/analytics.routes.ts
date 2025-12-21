@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { analyticsService } from '../services/analytics.service';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { analyticsService } from '../services/analytics.service.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
