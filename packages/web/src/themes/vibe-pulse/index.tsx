@@ -400,10 +400,10 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
           {mobileMenuOpen && (
             <MobileNavMenu 
               items={navMenu.length > 0 ? navMenu : [
-                { id: '1', label: '首页', url: '/', type: 'internal' },
-                { id: '2', label: '分类', url: '/categories', type: 'internal' },
-                { id: '3', label: '标签', url: '/tags', type: 'internal' },
-                { id: '4', label: '关于', url: '/about', type: 'internal' },
+                { id: '1', label: '首页', url: '/', type: 'internal' as const, sortOrder: 0 },
+                { id: '2', label: '分类', url: '/categories', type: 'internal' as const, sortOrder: 1 },
+                { id: '3', label: '标签', url: '/tags', type: 'internal' as const, sortOrder: 2 },
+                { id: '4', label: '关于', url: '/about', type: 'internal' as const, sortOrder: 3 },
               ]} 
               onClose={() => setMobileMenuOpen(false)} 
             />
