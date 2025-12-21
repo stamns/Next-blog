@@ -16,6 +16,9 @@ import themeRoutes from './routes/theme.routes.js';
 import pluginRoutes from './routes/plugin.routes.js';
 import settingRoutes from './routes/setting.routes.js';
 import prerenderRoutes from './routes/prerender.routes.js';
+import projectRoutes from './routes/project.routes.js';
+import projectCategoryRoutes from './routes/project-category.routes.js';
+import friendLinkRoutes from './routes/friend-link.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3012;
@@ -61,6 +64,9 @@ app.use('/api/themes', themeRoutes);
 app.use('/api/plugins', pluginRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/prerender', prerenderRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/project-categories', projectCategoryRoutes);
+app.use('/api/friend-links', friendLinkRoutes);
 
 // Error handler
 app.use(errorHandler);

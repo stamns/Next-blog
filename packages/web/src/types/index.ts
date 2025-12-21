@@ -111,3 +111,48 @@ export interface PaginatedResponse<T> {
   pageSize: number;
   totalPages: number;
 }
+
+
+// 项目
+export interface Project {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  content?: string;
+  githubUrl?: string;
+  demoUrl?: string;
+  docsUrl?: string;
+  featuredImage?: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  isRecommended: boolean;
+  isPinned: boolean;
+  sortOrder: number;
+  categoryId?: string;
+  category?: ProjectCategory;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 项目分类
+export interface ProjectCategory {
+  id: string;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  _count?: { projects: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 友链
+export interface FriendLink {
+  id: string;
+  name: string;
+  url: string;
+  description?: string;
+  logo?: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}

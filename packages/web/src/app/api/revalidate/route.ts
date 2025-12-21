@@ -6,7 +6,18 @@ import { NextRequest, NextResponse } from 'next/server';
 // Body: { path?: string, tag?: string, secret?: string }
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body: { path?: string; tag?: string; secret?: string } = {};
+    
+    // 安全解析 body（可能为空）
+    try {
+      const text = await request.text();
+      if (text) {
+        body = JSON.parse(text);
+      }
+    } catch {
+      // body 为空或解析失败，使用默认值
+    }
+
     const { path, tag, secret } = body;
 
     // 简单的密钥验证（可选，防止滥用）
@@ -27,13 +38,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, revalidated: true, path });
     }
 
-    // 默认清除首页和设置相关缓存
+    // 默认清除所有常用缓存
     revalidateTag('settings');
     revalidateTag('themes');
-    revalidatePath('/');
+    revalidateTag('articles');
+    revalidateTag('categories');
+    revalidateTag('tags');
+    revalidateTag('projects');
+    revalidateTag('friend-links');
+    revalidatePath('/', 'layout');
     
-    return NextResponse.json({ success: true, revalidated: true, message: 'All settings cache cleared' });
+    return NextResponse.json({ success: true, revalidated: true, message: 'All cache cleared' });
   } catch (error) {
+    console.error('Revalidate error:', error);
     return NextResponse.json({ success: false, error: 'Failed to revalidate' }, { status: 500 });
   }
 }

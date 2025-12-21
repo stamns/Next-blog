@@ -137,3 +137,28 @@ export async function getPageBySlug(slug: string) {
     tags: ['pages'],
   });
 }
+
+
+// 项目相关
+export async function getPublishedProjects(categoryId?: string) {
+  const query = categoryId ? `?categoryId=${categoryId}` : '';
+  return fetchAPI<any[]>(`/projects/published${query}`, {
+    revalidate: CACHE_TIME.static,
+    tags: ['projects'],
+  });
+}
+
+export async function getProjectCategories() {
+  return fetchAPI<any[]>('/project-categories', {
+    revalidate: CACHE_TIME.static,
+    tags: ['project-categories'],
+  });
+}
+
+// 友链相关
+export async function getFriendLinks() {
+  return fetchAPI<any[]>('/friend-links/public', {
+    revalidate: CACHE_TIME.static,
+    tags: ['friend-links'],
+  });
+}

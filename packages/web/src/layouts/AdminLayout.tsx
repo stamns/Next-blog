@@ -12,6 +12,8 @@ const menuItems = [
   { path: '/admin/categories', label: '分类管理', icon: '📁' },
   { path: '/admin/tags', label: '标签管理', icon: '🏷️' },
   { path: '/admin/pages', label: '页面管理', icon: '📄' },
+  { path: '/admin/projects', label: '项目管理', icon: '🚀' },
+  { path: '/admin/friends', label: '友链管理', icon: '🔗' },
   { path: '/admin/media', label: '媒体库', icon: '🖼️' },
   { path: '/admin/knowledge', label: '知识库', icon: '📚' },
   { path: '/admin/comments', label: '评论管理', icon: '💬' },
