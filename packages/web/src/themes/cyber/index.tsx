@@ -79,6 +79,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章卡片中显示特色图片',
   },
   {
+    key: 'showArticleDetailFeaturedImage',
+    label: '文章页显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章详情页显示特色图片',
+  },
+  {
     key: 'showInteractiveGlow',
     label: '显示互动光效',
     type: 'boolean',
@@ -152,6 +159,7 @@ const defaultConfig: ThemeConfig = {
   showGrid: true,
   showUptime: true,
   showFeaturedImage: true,
+  showArticleDetailFeaturedImage: true,
   showInteractiveGlow: true,
   cardStyle: 'glass',
   gridColumns: '2',
@@ -508,6 +516,7 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 // ============ 文章详情 ============
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
   const colors = accentColors[config.accentColor] || accentColors.emerald;
+  const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   return (
     <article>
@@ -540,6 +549,13 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
           </span>
         </div>
       </header>
+
+      {/* 特色图片 */}
+      {showArticleDetailFeaturedImage && article.featuredImage && (
+        <div className="mb-12 overflow-hidden border border-white/10">
+          <img src={article.featuredImage} alt={article.title} className="w-full aspect-video object-cover" />
+        </div>
+      )}
 
       {/* 内容区域 */}
       <div className="border border-white/10 bg-white/[0.02] backdrop-blur-xl p-6 md:p-12 shadow-2xl">

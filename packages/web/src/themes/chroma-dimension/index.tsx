@@ -89,6 +89,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章卡片中显示特色图片',
   },
   {
+    key: 'showArticleDetailFeaturedImage',
+    label: '文章页显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章详情页显示特色图片',
+  },
+  {
     key: 'excerptLength',
     label: '摘要长度',
     type: 'number',
@@ -145,6 +152,7 @@ const defaultConfig: ThemeConfig = {
   glassMorphism: true,
   showAiSpirit: true,
   showFeaturedImage: true,
+  showArticleDetailFeaturedImage: true,
   excerptLength: 120,
   siteMood: 'PURE_ENERGY',
   exploreBtn: 'SYNC DIMENSION',
@@ -671,7 +679,7 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 // ============ 文章详情 ============
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
   const p = palettes[config.vibeMode as string] || palettes['electric-candy'];
-  const showFeaturedImage = config.showFeaturedImage !== false;
+  const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   // 从文章内容提取目录
   const articleAny = article as any;
@@ -743,7 +751,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
       </header>
 
       {/* 特色图片 */}
-      {showFeaturedImage && article.featuredImage && (
+      {showArticleDetailFeaturedImage && article.featuredImage && (
         <div className="w-full aspect-video mb-12 md:mb-20 overflow-hidden rounded-2xl md:rounded-[3rem] shadow-2xl">
           <img
             src={article.featuredImage}

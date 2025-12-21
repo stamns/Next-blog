@@ -91,6 +91,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章卡片和详情页显示特色图',
   },
   {
+    key: 'showArticleDetailFeaturedImage',
+    label: '文章页显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章详情页显示特色图片',
+  },
+  {
     key: 'paperTextureEnabled',
     label: '开启纸张触感',
     type: 'boolean',
@@ -147,6 +154,7 @@ const defaultConfig: ThemeConfig = {
   articleCardLayout: 'organic',
   articleDetailLayout: 'manuscript',
   showFeaturedImage: true,
+  showArticleDetailFeaturedImage: true,
   paperTextureEnabled: true,
   showAiSpirit: true,
   excerptLength: 150,
@@ -542,7 +550,7 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
   const style = vibeStyles[config.lightingMode as string] || vibeStyles.morning;
   const layout = config.articleDetailLayout || 'manuscript';
-  const showFeaturedImage = config.showFeaturedImage !== false;
+  const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   return (
     <article className={`animate-in fade-in duration-1000 ${layout === 'manuscript' ? 'max-w-4xl mx-auto' : 'w-full'}`}>
@@ -585,7 +593,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
       </header>
 
       {/* 沉浸模式特色图 */}
-      {showFeaturedImage && layout === 'immersive' && article.featuredImage && (
+      {showArticleDetailFeaturedImage && layout === 'immersive' && article.featuredImage && (
         <div className="w-full aspect-[21/9] mb-16 md:mb-24 overflow-hidden rounded-[3rem] md:rounded-[4rem] shadow-2xl">
           <img
             src={article.featuredImage}
@@ -596,7 +604,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
       )}
 
       {/* 手稿模式特色图 */}
-      {showFeaturedImage && layout === 'manuscript' && article.featuredImage && (
+      {showArticleDetailFeaturedImage && layout === 'manuscript' && article.featuredImage && (
         <div className="w-full aspect-video mb-16 overflow-hidden rounded-[2rem] shadow-xl">
           <img
             src={article.featuredImage}

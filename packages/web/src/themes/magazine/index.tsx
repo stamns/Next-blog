@@ -78,6 +78,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章卡片顶部显示特色图或渐变背景',
   },
   {
+    key: 'showArticleDetailFeaturedImage',
+    label: '文章页显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章详情页显示特色图片',
+  },
+  {
     key: 'colorScheme',
     label: '配色方案',
     type: 'select',
@@ -117,6 +124,7 @@ const defaultConfig: ThemeConfig = {
   gridColumns: '3',
   cardStyle: 'gradient',
   showFeaturedImage: true,
+  showArticleDetailFeaturedImage: true,
   colorScheme: 'purple',
   showHeroHeader: true,
   roundedCorners: 'large',
@@ -434,6 +442,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
   const colors = colorSchemes[config.colorScheme] || colorSchemes.purple;
   const rounded = roundedClasses[config.roundedCorners] || roundedClasses.large;
   const showHero = config.showHeroHeader;
+  const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   const gradients = ['from-violet-500 to-purple-600', 'from-fuchsia-500 to-pink-600', 'from-cyan-500 to-blue-600'];
   const gradient = gradients[article.title.length % gradients.length];
@@ -476,6 +485,12 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
           </div>
           <h1 className="text-3xl md:text-4xl font-black leading-tight">{article.title}</h1>
         </header>
+      )}
+
+      {showArticleDetailFeaturedImage && article.featuredImage && (
+        <div className={`mb-8 ${rounded.card} overflow-hidden`}>
+          <img src={article.featuredImage} alt={article.title} className="w-full aspect-video object-cover" />
+        </div>
       )}
 
       <div className={`bg-white dark:bg-gray-900 ${rounded.card} p-8 md:p-12 shadow-sm`}>

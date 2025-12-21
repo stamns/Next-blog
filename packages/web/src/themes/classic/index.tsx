@@ -91,6 +91,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章卡片顶部显示特色图',
   },
   {
+    key: 'showArticleDetailFeaturedImage',
+    label: '文章页显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章详情页显示特色图片',
+  },
+  {
     key: 'articlesPerRow',
     label: '每行文章数',
     type: 'select',
@@ -130,6 +137,7 @@ const defaultConfig: ThemeConfig = {
     { label: '知识库', url: '/knowledge' },
   ]),
   showFeaturedImage: false,
+  showArticleDetailFeaturedImage: true,
   articlesPerRow: '1',
   primaryColor: 'amber',
 };
@@ -349,10 +357,16 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 // ============ 文章详情 ============
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
   const colors = colorClasses[config.primaryColor] || colorClasses.amber;
+  const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   return (
     <article className="bg-white dark:bg-stone-800 rounded-lg shadow-sm border border-stone-200 dark:border-stone-700 overflow-hidden">
       <div className={`h-1 bg-gradient-to-r ${colors.gradient}`} />
+      {showArticleDetailFeaturedImage && article.featuredImage && (
+        <div className="aspect-video overflow-hidden">
+          <img src={article.featuredImage} alt={article.title} className="w-full h-full object-cover" />
+        </div>
+      )}
       <div className="p-8">
         <header className="mb-8 pb-6 border-b border-stone-200 dark:border-stone-700">
           <h1 className="text-3xl font-serif font-bold mb-4">{article.title}</h1>

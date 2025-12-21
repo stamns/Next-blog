@@ -105,6 +105,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章卡片中显示图片',
   },
   {
+    key: 'showArticleDetailFeaturedImage',
+    label: '文章页显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章详情页显示特色图片',
+  },
+  {
     key: 'imageGridStyle',
     label: '图片网格样式',
     type: 'select',
@@ -161,6 +168,7 @@ const defaultConfig: ThemeConfig = {
   showTrending: true,
   showAiAssistant: true,
   showFeaturedImage: true,
+  showArticleDetailFeaturedImage: true,
   imageGridStyle: 'auto',
   excerptLength: 150,
   showVerifiedBadge: true,
@@ -617,6 +625,7 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
   const theme = colorMaps[config.primaryColor] || colorMaps['weibo-orange'];
   const showAiAssistant = config.showAiAssistant !== false;
+  const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   return (
     <article className="animate-in fade-in duration-700">
@@ -653,6 +662,13 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
             )}
           </div>
         </header>
+
+        {/* 特色图片 */}
+        {showArticleDetailFeaturedImage && article.featuredImage && (
+          <div className="rounded-2xl overflow-hidden">
+            <img src={article.featuredImage} alt={article.title} className="w-full aspect-video object-cover" />
+          </div>
+        )}
 
         {/* AI 内容摘要 */}
         {showAiAssistant && (

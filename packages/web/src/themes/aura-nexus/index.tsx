@@ -119,6 +119,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章卡片中显示特色图片',
   },
   {
+    key: 'showArticleDetailFeaturedImage',
+    label: '文章页显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章详情页显示特色图片',
+  },
+  {
     key: 'excerptLength',
     label: '摘要长度',
     type: 'number',
@@ -177,6 +184,7 @@ const defaultConfig: ThemeConfig = {
   showAgent: true,
   agentBehavior: 'active',
   showFeaturedImage: true,
+  showArticleDetailFeaturedImage: true,
   excerptLength: 120,
   heroTitle: 'Aura',
   heroSubtitle: 'Nexus',
@@ -547,6 +555,7 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
   const theme = vibeThemes[config.vibeMode] || vibeThemes['hyper-pop'];
   const style = config.articleDetailStyle || 'immersive';
+  const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   // 1. 沉浸式 (Immersive) - 默认全屏视觉
   if (style === 'immersive') {
@@ -578,6 +587,12 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
             </div>
           </div>
         </header>
+
+        {showArticleDetailFeaturedImage && article.featuredImage && (
+          <div className="rounded-[2rem] md:rounded-[3rem] overflow-hidden">
+            <img src={article.featuredImage} alt={article.title} className="w-full aspect-video object-cover" />
+          </div>
+        )}
 
         <div
           className="prose prose-lg md:prose-2xl max-w-none 
@@ -630,6 +645,12 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
             {article.author && <span>by {article.author.username}</span>}
           </div>
         </header>
+
+        {showArticleDetailFeaturedImage && article.featuredImage && (
+          <div className="mb-16 rounded-2xl overflow-hidden">
+            <img src={article.featuredImage} alt={article.title} className="w-full aspect-video object-cover" />
+          </div>
+        )}
 
         <div
           className="prose prose-lg md:prose-xl max-w-none 

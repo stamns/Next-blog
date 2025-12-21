@@ -67,6 +67,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在文章卡片中显示特色图片',
   },
   {
+    key: 'showArticleDetailFeaturedImage',
+    label: '文章页显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章详情页显示特色图片',
+  },
+  {
     key: 'showEmoji',
     label: '显示表情装饰',
     type: 'boolean',
@@ -151,6 +158,7 @@ const defaultConfig: ThemeConfig = {
   showBlobs: true,
   showDots: true,
   showFeaturedImage: true,
+  showArticleDetailFeaturedImage: true,
   showEmoji: true,
   cardStyle: 'glass',
   cardRadius: 'large',
@@ -476,6 +484,7 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps & { config?: ThemeConfig }) {
   const colors = colorSchemes[config.colorScheme] || colorSchemes.rainbow;
   const radius = radiusClasses[config.cardRadius] || radiusClasses.large;
+  const showArticleDetailFeaturedImage = config.showArticleDetailFeaturedImage !== false;
 
   const hashCode = (str: string) => {
     let hash = 0;
@@ -518,6 +527,13 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
           </span>
         </div>
       </header>
+
+      {/* 特色图片 */}
+      {showArticleDetailFeaturedImage && article.featuredImage && (
+        <div className={`mb-12 ${radius.card} overflow-hidden shadow-xl`}>
+          <img src={article.featuredImage} alt={article.title} className="w-full aspect-video object-cover" />
+        </div>
+      )}
 
       {/* 内容区域 */}
       <div className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl ${radius.card} p-6 md:p-12 shadow-xl border border-white dark:border-slate-800`}>
