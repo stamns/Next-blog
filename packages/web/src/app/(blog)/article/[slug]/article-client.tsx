@@ -32,10 +32,13 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
   const isCyberTheme = themeName === 'cyber';
   const isAuraNexusTheme = themeName === 'aura-nexus';
   const isVibePulseTheme = themeName === 'vibe-pulse';
+  const isAetherBloomTheme = themeName === 'aether-bloom';
+  const isChromaDimensionTheme = themeName === 'chroma-dimension';
   const isDarkTheme = isCyberTheme || isAuraNexusTheme;
   
-  // vibe-pulse 主题有自己的三栏布局，不显示侧边 TOC
-  const showSidebarToc = !isVibePulseTheme && toc.length > 0;
+  // 这些主题有自己的布局，不显示侧边 TOC
+  const useSimpleLayout = isVibePulseTheme || isAetherBloomTheme || isChromaDimensionTheme;
+  const showSidebarToc = !useSimpleLayout && toc.length > 0;
   
   const tocCardClass = isDarkTheme 
     ? 'bg-white/[0.02] border border-white/10 backdrop-blur-xl' 
@@ -128,6 +131,48 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
         {/* 评论区 */}
         {isCommentEnabled() && (
           <div className="px-4 md:px-6">
+            <CommentSection articleId={article.id} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // aether-bloom 和 chroma-dimension 主题使用简化布局
+  if (isAetherBloomTheme || isChromaDimensionTheme) {
+    return (
+      <div>
+        {/* Inline TOC Toggle */}
+        {toc.length > 0 && (
+          <div className="mb-6">
+            <button
+              onClick={() => setTocOpen(!tocOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-stone-200/50 dark:border-slate-700/50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm"
+            >
+              <span className="font-bold text-sm">📑 文章目录</span>
+              <svg
+                className={`w-5 h-5 transition-transform ${tocOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {tocOpen && (
+              <nav className="mt-2 p-4 rounded-xl border border-stone-200/50 dark:border-slate-700/50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm text-sm">
+                {renderTocItems(toc)}
+              </nav>
+            )}
+          </div>
+        )}
+
+        {/* 文章内容 */}
+        <ArticleDetail article={article} config={themeConfig} />
+        
+        {/* 评论区 */}
+        {isCommentEnabled() && (
+          <div className="mt-12">
             <CommentSection articleId={article.id} />
           </div>
         )}

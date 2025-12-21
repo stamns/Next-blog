@@ -370,12 +370,12 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
 
   return (
     <div className="min-h-screen bg-[#F2F2F2] dark:bg-[#0a0a0a] text-slate-800 dark:text-slate-200 font-sans transition-all duration-300">
-      <div className={`${layoutWidthClass} mx-auto flex justify-center`}>
+      <div className={`${layoutWidthClass} mx-auto flex ${config.layoutWidth === 'full' ? 'px-0' : ''}`}>
         {/* PC 左侧导航栏 */}
         <LeftSidebar config={config} siteName={siteName} />
 
-        {/* 中间信息流 */}
-        <main className="flex-1 min-w-0 min-h-screen bg-white dark:bg-[#0f0f0f] border-x border-slate-100 dark:border-slate-700">
+        {/* 中间信息流 - 全宽模式下自动扩展 */}
+        <main className={`flex-1 min-w-0 min-h-screen bg-white dark:bg-[#0f0f0f] border-x border-slate-100 dark:border-slate-700 ${config.layoutWidth === 'full' ? 'max-w-none' : ''}`}>
           {/* 移动端顶部状态栏 */}
           <div className="lg:hidden sticky top-0 z-50 bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md px-4 h-14 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 flex items-center justify-center">

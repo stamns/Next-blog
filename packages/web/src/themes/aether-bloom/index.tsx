@@ -487,22 +487,22 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
     );
   }
 
-  // 有机交错布局 (默认)
+  // 有机交错布局 (默认) - 图片在上方
   return (
-    <article className="group relative flex flex-col md:flex-row gap-8 md:gap-16 items-center mb-24 md:mb-40 last:mb-0">
+    <article className="group relative flex flex-col gap-6 md:gap-8 mb-20 md:mb-32 last:mb-0">
       {showFeaturedImage && article.featuredImage && (
-        <div className="relative w-full md:w-5/12 aspect-[4/3] shrink-0">
+        <div className="relative w-full aspect-[16/9] md:aspect-[21/9] overflow-hidden rounded-2xl md:rounded-[3rem] shadow-lg">
           <div
-            className={`absolute inset-0 ${style.cardBg} ${style.darkCardBg} rounded-[4rem] rotate-2 group-hover:rotate-0 group-hover:rounded-3xl transition-all duration-700 ease-out shadow-inner`}
+            className={`absolute inset-0 ${style.cardBg} ${style.darkCardBg} transition-all duration-700`}
           />
           <img
             src={article.featuredImage}
             alt={article.title}
-            className="absolute inset-0 w-full h-full object-cover rounded-[4rem] rotate-2 group-hover:rotate-0 group-hover:rounded-3xl transition-all duration-1000 opacity-90 group-hover:opacity-100"
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
           />
         </div>
       )}
-      <div className="flex-1 space-y-6 py-4">
+      <div className="flex-1 space-y-4 md:space-y-6 py-2 md:py-4">
         <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] opacity-40">
           <span className="flex items-center gap-1">
             <Clock size={12} />
@@ -515,12 +515,12 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
         </div>
         <Link href={`/article/${article.slug}`}>
           <h2
-            className={`text-3xl md:text-5xl font-black leading-tight tracking-tighter ${style.title} ${style.darkTitle} hover:opacity-70 transition-opacity cursor-pointer`}
+            className={`text-2xl md:text-4xl lg:text-5xl font-black leading-tight tracking-tighter ${style.title} ${style.darkTitle} hover:opacity-70 transition-opacity cursor-pointer`}
           >
             {article.title}
           </h2>
         </Link>
-        <p className="text-lg md:text-xl leading-relaxed opacity-60 italic font-medium max-w-xl">
+        <p className="text-base md:text-lg leading-relaxed opacity-60 italic font-medium max-w-3xl">
           {truncate(article.excerpt || article.content, excerptLength)}
         </p>
         {/* 标签 */}
@@ -632,24 +632,24 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
       <div className="relative">
         {layout === 'manuscript' && (
           <div
-            className={`absolute -inset-4 md:-inset-12 ${style.cardBg} ${style.darkCardBg} -z-10 rounded-[2rem] md:rounded-[4rem] shadow-xl backdrop-blur-sm -rotate-1 border border-white/40 dark:border-slate-700/40`}
+            className={`absolute -inset-4 md:-inset-8 ${style.cardBg} ${style.darkCardBg} -z-10 rounded-2xl md:rounded-[3rem] shadow-xl backdrop-blur-sm border border-white/40 dark:border-slate-700/40`}
           />
         )}
         <div
-          className={`prose prose-lg md:prose-xl max-w-none 
+          className={`prose prose-lg md:prose-xl max-w-none overflow-hidden
             prose-p:leading-[2] prose-p:font-serif prose-p:mb-8
             prose-p:text-stone-600 dark:prose-p:text-stone-300
             prose-headings:font-black prose-headings:tracking-tighter 
             prose-headings:text-stone-800 dark:prose-headings:text-stone-100
             prose-blockquote:border-l-0 prose-blockquote:bg-stone-50/50 dark:prose-blockquote:bg-slate-800/50
-            prose-blockquote:px-8 md:prose-blockquote:px-12 prose-blockquote:py-8 
-            prose-blockquote:rounded-[2rem] prose-blockquote:italic prose-blockquote:my-12
+            prose-blockquote:px-6 md:prose-blockquote:px-8 prose-blockquote:py-6 
+            prose-blockquote:rounded-xl md:prose-blockquote:rounded-2xl prose-blockquote:italic prose-blockquote:my-8
             prose-blockquote:text-stone-600 dark:prose-blockquote:text-stone-300
-            prose-img:rounded-[2rem] md:prose-img:rounded-[3rem]
+            prose-img:rounded-xl md:prose-img:rounded-2xl prose-img:max-w-full
             prose-strong:text-stone-900 dark:prose-strong:text-stone-100
             prose-a:text-blue-600 dark:prose-a:text-blue-400
-            prose-code:text-rose-600 dark:prose-code:text-rose-400
-            prose-pre:bg-stone-100 dark:prose-pre:bg-slate-800 prose-pre:rounded-2xl
+            prose-code:text-rose-600 dark:prose-code:text-rose-400 prose-code:break-words
+            prose-pre:bg-stone-100 dark:prose-pre:bg-slate-800 prose-pre:rounded-xl prose-pre:overflow-x-auto prose-pre:max-w-full
             prose-li:text-stone-600 dark:prose-li:text-stone-300`}
           dangerouslySetInnerHTML={{ __html: article.htmlContent || article.content }}
         />
