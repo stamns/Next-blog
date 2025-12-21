@@ -31,6 +31,7 @@ export interface ArticleDetailProps {
     slug: string;
     content: string;
     htmlContent?: string | null;
+    featuredImage?: string | null;
     publishedAt?: string | null;
     createdAt: string;
     category?: { id: string; name: string } | null;
