@@ -100,6 +100,12 @@ const themeColors = {
     accentBg: 'bg-orange-50 dark:bg-orange-900/20',
     statsBg: 'bg-gradient-to-r from-orange-500 to-amber-500',
   },
+  'aether-bloom': {
+    gradient: 'from-blue-400 via-teal-400 to-amber-300',
+    accentText: 'text-blue-500 dark:text-blue-400',
+    accentBg: 'bg-blue-50 dark:bg-blue-900/20',
+    statsBg: 'bg-gradient-to-r from-blue-400 via-teal-400 to-amber-300',
+  },
 };
 
 // 图标映射

@@ -192,6 +192,16 @@ export class ThemeService {
           description: '社交信息流布局，左侧导航、中间信息流、右侧热搜与AI助手的完美结合',
         }),
       },
+      {
+        name: 'aether-bloom',
+        version: '1.0.0',
+        path: '/themes/aether-bloom',
+        isActive: false,
+        config: JSON.stringify({
+          displayName: '以太花语',
+          description: '有机感博客主题：自然呼吸的排版体验，支持多种卡片布局、详情页排版与响应式宽度定义',
+        }),
+      },
     ];
 
     const results: Theme[] = [];

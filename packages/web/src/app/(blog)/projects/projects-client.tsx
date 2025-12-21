@@ -82,6 +82,13 @@ const themeColors = {
     buttonActive: 'bg-orange-500 text-white',
     buttonHover: 'hover:border-orange-500',
   },
+  'aether-bloom': {
+    gradient: 'from-blue-400 via-teal-400 to-amber-300',
+    accentText: 'text-blue-500 dark:text-blue-400',
+    accentBg: 'bg-blue-50 dark:bg-blue-900/20',
+    buttonActive: 'bg-blue-500 text-white',
+    buttonHover: 'hover:border-blue-500',
+  },
 };
 
 // 默认配置

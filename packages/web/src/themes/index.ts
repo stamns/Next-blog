@@ -6,6 +6,7 @@ import { CyberTheme } from './cyber';
 import { VibrantTheme } from './vibrant';
 import { AuraNexusTheme } from './aura-nexus';
 import { VibePulseTheme } from './vibe-pulse';
+import { AetherBloomTheme } from './aether-bloom';
 
 export interface ArticleCardProps {
   article: {
@@ -122,6 +123,7 @@ export const themes: Record<string, ThemeComponents> = {
   vibrant: VibrantTheme,
   'aura-nexus': AuraNexusTheme,
   'vibe-pulse': VibePulseTheme,
+  'aether-bloom': AetherBloomTheme,
 };
 
 // 获取主题
