@@ -45,7 +45,7 @@ export function SettingsPage() {
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
+            onClick={() => setActiveTab(tab.key as 'site' | 'menu' | 'slider' | 'seo' | 'security' | 'ai' | 'theme' | 'plugin' | 'help')}
             className={`px-4 py-2 rounded-lg transition-colors ${
               activeTab === tab.key
                 ? 'bg-primary-600 text-white'
@@ -666,12 +666,21 @@ function QuickLinksEditor({ value, onChange }: { value: string; onChange: (value
   );
 }
 
+interface DbTheme {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  isActive: boolean;
+  config: Record<string, unknown>;
+}
+
 function ThemeSettings() {
   const queryClient = useQueryClient();
 
   const { data: dbThemes, isLoading } = useQuery({
     queryKey: ['themes'],
-    queryFn: () => api.get<any[]>('/themes'),
+    queryFn: () => api.get<DbTheme[]>('/themes'),
   });
 
   const activateTheme = useMutation({
@@ -712,7 +721,9 @@ function ThemeSettings() {
   const activeThemeData = frontendThemes[activeThemeName];
 
   // 解析当前主题配置
-  const currentConfig = activeTheme?.config ? JSON.parse(activeTheme.config) : {};
+  const currentConfig = activeTheme?.config 
+    ? (typeof activeTheme.config === 'string' ? JSON.parse(activeTheme.config) : activeTheme.config) 
+    : {};
   const mergedConfig = { ...(activeThemeData?.defaultConfig || {}), ...currentConfig };
 
   const handleConfigChange = (key: string, value: unknown) => {
@@ -878,11 +889,20 @@ function ThemeSettings() {
   );
 }
 
+interface Plugin {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  version: string;
+  isEnabled: boolean;
+}
+
 function PluginSettings() {
   const queryClient = useQueryClient();
   const { data: plugins } = useQuery({
     queryKey: ['plugins'],
-    queryFn: () => api.get<any[]>('/plugins'),
+    queryFn: () => api.get<Plugin[]>('/plugins'),
   });
 
   const enablePlugin = useMutation({
@@ -955,6 +975,13 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
+interface PageItem {
+  id: string;
+  title: string;
+  slug: string;
+  showInNav?: boolean;
+}
+
 function MenuSettings() {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -966,7 +993,7 @@ function MenuSettings() {
 
   const { data: pages, isLoading: pagesLoading, error: pagesError } = useQuery({
     queryKey: ['pages'],
-    queryFn: () => api.get<any[]>('/pages'),
+    queryFn: () => api.get<PageItem[]>('/pages'),
   });
 
   const { data: categories } = useCategoriesFlat();

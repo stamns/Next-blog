@@ -21,9 +21,9 @@ import { formatDate } from '../../lib/utils';
 import { Plus, Trash2 } from 'lucide-react';
 
 const BUILTIN_PAGES = [
-  { key: 'about', name: '关于页面', path: '/about' },
-  { key: 'projects', name: '项目页面', path: '/projects' },
-  { key: 'friends', name: '友链页面', path: '/friends' },
+  { key: 'about', name: '关于页面', path: '/about', hasEditor: true },
+  { key: 'projects', name: '项目页面', path: '/projects', hasEditor: true },
+  { key: 'friends', name: '友链页面', path: '/friends', hasEditor: true },
 ];
 
 const TEMPLATES = [
@@ -38,6 +38,10 @@ export function PagesPage() {
   const [activeTab, setActiveTab] = useState<'builtin' | 'custom'>('builtin');
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
   const [aboutContent, setAboutContent] = useState('');
+  const [friendsModalOpen, setFriendsModalOpen] = useState(false);
+  const [friendsContent, setFriendsContent] = useState('');
+  const [projectsModalOpen, setProjectsModalOpen] = useState(false);
+  const [projectsContent, setProjectsContent] = useState('');
   
   const { data: pages, isLoading } = useQuery({
     queryKey: ['pages'],
@@ -68,6 +72,16 @@ export function PagesPage() {
   const openAboutEditor = () => {
     setAboutContent(settings?.aboutPageContent || '');
     setAboutModalOpen(true);
+  };
+
+  const openFriendsEditor = () => {
+    setFriendsContent(settings?.friendsPageContent || '');
+    setFriendsModalOpen(true);
+  };
+
+  const openProjectsEditor = () => {
+    setProjectsContent(settings?.projectsPageContent || '');
+    setProjectsModalOpen(true);
   };
 
   const createPage = useMutation({
@@ -237,6 +251,16 @@ export function PagesPage() {
                               编辑内容
                             </Button>
                           )}
+                          {page.key === 'friends' && (
+                            <Button variant="ghost" size="sm" onClick={openFriendsEditor}>
+                              编辑内容
+                            </Button>
+                          )}
+                          {page.key === 'projects' && (
+                            <Button variant="ghost" size="sm" onClick={openProjectsEditor}>
+                              编辑内容
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -365,6 +389,30 @@ export function PagesPage() {
           onCancel={() => setAboutModalOpen(false)}
         />
       </Modal>
+
+      <Modal isOpen={friendsModalOpen} onClose={() => setFriendsModalOpen(false)} title="编辑友链页面" size="lg">
+        <FriendsPageEditor
+          content={friendsContent}
+          onChange={setFriendsContent}
+          onSave={() => {
+            updateSetting.mutate({ key: 'friendsPageContent', value: friendsContent });
+            setFriendsModalOpen(false);
+          }}
+          onCancel={() => setFriendsModalOpen(false)}
+        />
+      </Modal>
+
+      <Modal isOpen={projectsModalOpen} onClose={() => setProjectsModalOpen(false)} title="编辑项目页面" size="lg">
+        <ProjectsPageEditor
+          content={projectsContent}
+          onChange={setProjectsContent}
+          onSave={() => {
+            updateSetting.mutate({ key: 'projectsPageContent', value: projectsContent });
+            setProjectsModalOpen(false);
+          }}
+          onCancel={() => setProjectsModalOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }
@@ -452,7 +500,7 @@ function AboutPageEditor({
         {tabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
+            onClick={() => setActiveTab(tab.key as 'basic' | 'skills' | 'timeline' | 'hobbies' | 'stats')}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               activeTab === tab.key
                 ? 'bg-primary-600 text-white'
@@ -753,6 +801,172 @@ function AboutPageEditor({
       )}
 
       {/* 操作按钮 */}
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <Button variant="outline" onClick={onCancel}>取消</Button>
+        <Button onClick={onSave}>保存</Button>
+      </div>
+    </div>
+  );
+}
+
+// 友链页面配置接口
+interface FriendsConfig {
+  title?: string;
+  subtitle?: string;
+  exchangeTitle?: string;
+  exchangeDescription?: string;
+  requirements?: string[];
+  ctaTitle?: string;
+  ctaDescription?: string;
+  ctaButtonText?: string;
+  ctaButtonLink?: string;
+}
+
+const defaultFriendsConfig: FriendsConfig = {
+  title: '友情链接',
+  subtitle: '在这里，遇见那些同样热爱技术与生活的灵魂。',
+  exchangeTitle: '互换友链',
+  exchangeDescription: '',
+  requirements: ['原创技术/生活类内容优先', '稳定更新，拒绝采集站', '已添加本站友链'],
+  ctaTitle: '准备好了吗？',
+  ctaDescription: '在评论区留下你的站点信息，我会尽快回复。',
+  ctaButtonText: '立即申请',
+  ctaButtonLink: '#comments',
+};
+
+function FriendsPageEditor({
+  content,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  content: string;
+  onChange: (content: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  // 解析配置
+  let config: FriendsConfig = defaultFriendsConfig;
+  try {
+    if (content) {
+      config = { ...defaultFriendsConfig, ...JSON.parse(content) };
+    }
+  } catch {
+    // 使用默认配置
+  }
+
+  const updateConfig = (updates: Partial<FriendsConfig>) => {
+    const newConfig = { ...config, ...updates };
+    onChange(JSON.stringify(newConfig, null, 2));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-4">
+        <Input label="页面标题" value={config.title || ''} onChange={(e) => updateConfig({ title: e.target.value })} />
+        <Textarea label="页面副标题" value={config.subtitle || ''} onChange={(e) => updateConfig({ subtitle: e.target.value })} />
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+        <h3 className="text-sm font-semibold mb-3">互换友链区域</h3>
+        <div className="space-y-4">
+          <Input label="区域标题" value={config.exchangeTitle || ''} onChange={(e) => updateConfig({ exchangeTitle: e.target.value })} />
+          <div>
+            <label className="block text-sm font-medium mb-1">申请须知（每行一条）</label>
+            <Textarea
+              value={config.requirements?.join('\n') || ''}
+              onChange={(e) => updateConfig({ requirements: e.target.value.split('\n').filter(Boolean) })}
+              className="min-h-[100px]"
+              placeholder="每行一条要求"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+        <h3 className="text-sm font-semibold mb-3">CTA 卡片</h3>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="标题" value={config.ctaTitle || ''} onChange={(e) => updateConfig({ ctaTitle: e.target.value })} />
+            <Input label="按钮文字" value={config.ctaButtonText || ''} onChange={(e) => updateConfig({ ctaButtonText: e.target.value })} />
+          </div>
+          <Textarea label="描述" value={config.ctaDescription || ''} onChange={(e) => updateConfig({ ctaDescription: e.target.value })} />
+          <Input label="按钮链接" value={config.ctaButtonLink || ''} onChange={(e) => updateConfig({ ctaButtonLink: e.target.value })} placeholder="#comments 或 https://..." />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <Button variant="outline" onClick={onCancel}>取消</Button>
+        <Button onClick={onSave}>保存</Button>
+      </div>
+    </div>
+  );
+}
+
+// 项目页面配置接口
+interface ProjectsConfig {
+  title?: string;
+  subtitle?: string;
+  ctaTitle?: string;
+  ctaDescription?: string;
+  ctaButtonText?: string;
+  ctaButtonLink?: string;
+}
+
+const defaultProjectsConfig: ProjectsConfig = {
+  title: '我的开源项目',
+  subtitle: '这里展示了我参与或主导的开源项目，涵盖前端开发、后端工程以及各种效率工具。',
+  ctaTitle: '想要交流或贡献？',
+  ctaDescription: '我的所有开源项目都欢迎 Issue 和 PR，让我们一起构建更好的软件。',
+  ctaButtonText: '访问 GitHub',
+  ctaButtonLink: 'https://github.com',
+};
+
+function ProjectsPageEditor({
+  content,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  content: string;
+  onChange: (content: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  // 解析配置
+  let config: ProjectsConfig = defaultProjectsConfig;
+  try {
+    if (content) {
+      config = { ...defaultProjectsConfig, ...JSON.parse(content) };
+    }
+  } catch {
+    // 使用默认配置
+  }
+
+  const updateConfig = (updates: Partial<ProjectsConfig>) => {
+    const newConfig = { ...config, ...updates };
+    onChange(JSON.stringify(newConfig, null, 2));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-4">
+        <Input label="页面标题" value={config.title || ''} onChange={(e) => updateConfig({ title: e.target.value })} />
+        <Textarea label="页面副标题" value={config.subtitle || ''} onChange={(e) => updateConfig({ subtitle: e.target.value })} />
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+        <h3 className="text-sm font-semibold mb-3">底部 CTA 区域</h3>
+        <div className="space-y-4">
+          <Input label="标题" value={config.ctaTitle || ''} onChange={(e) => updateConfig({ ctaTitle: e.target.value })} />
+          <Textarea label="描述" value={config.ctaDescription || ''} onChange={(e) => updateConfig({ ctaDescription: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="按钮文字" value={config.ctaButtonText || ''} onChange={(e) => updateConfig({ ctaButtonText: e.target.value })} />
+            <Input label="按钮链接" value={config.ctaButtonLink || ''} onChange={(e) => updateConfig({ ctaButtonLink: e.target.value })} placeholder="https://github.com/..." />
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
         <Button variant="outline" onClick={onCancel}>取消</Button>
         <Button onClick={onSave}>保存</Button>

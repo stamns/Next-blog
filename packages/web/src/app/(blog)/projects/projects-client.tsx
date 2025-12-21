@@ -13,11 +13,22 @@ import {
   Pin,
 } from 'lucide-react';
 import { useBlogThemeStore } from '@/stores/blog-theme.store';
+import { useSiteSettingsContext } from '@/contexts/site-settings-context';
 
 interface Props {
   projects: Project[];
   categories: ProjectCategory[];
   template: string;
+}
+
+// 项目页面配置接口
+interface ProjectsPageConfig {
+  title?: string;
+  subtitle?: string;
+  ctaTitle?: string;
+  ctaDescription?: string;
+  ctaButtonText?: string;
+  ctaButtonLink?: string;
 }
 
 // 主题配色
@@ -45,11 +56,32 @@ const themeColors = {
   },
 };
 
+// 默认配置
+const defaultConfig: ProjectsPageConfig = {
+  title: '我的开源项目',
+  subtitle: '这里展示了我参与或主导的开源项目，涵盖前端开发、后端工程以及各种效率工具。',
+  ctaTitle: '想要交流或贡献？',
+  ctaDescription: '我的所有开源项目都欢迎 Issue 和 PR，让我们一起构建更好的软件。',
+  ctaButtonText: '访问 GitHub',
+  ctaButtonLink: 'https://github.com',
+};
+
 export function ProjectsClient({ projects, categories }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { currentTheme } = useBlogThemeStore();
+  const { settings } = useSiteSettingsContext();
   const colors = themeColors[currentTheme as keyof typeof themeColors] || themeColors.classic;
+
+  // 解析页面配置
+  let config: ProjectsPageConfig = defaultConfig;
+  try {
+    if (settings.projectsPageContent) {
+      config = { ...defaultConfig, ...JSON.parse(settings.projectsPageContent) };
+    }
+  } catch {
+    // 使用默认配置
+  }
 
   // 解析技术栈
   const parseTechStack = (techStack?: string): string[] => {
@@ -87,11 +119,11 @@ export function ProjectsClient({ projects, categories }: Props) {
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">
           <span className={`bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>
-            我的开源项目
+            {config.title}
           </span>
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">
-          这里展示了我参与或主导的开源项目，涵盖前端开发、后端工程以及各种效率工具。
+          {config.subtitle}
         </p>
       </div>
 
@@ -177,15 +209,15 @@ export function ProjectsClient({ projects, categories }: Props) {
       {/* 底部 CTA */}
       <div className={`mt-16 p-8 rounded-2xl bg-gradient-to-r ${colors.gradient} text-white text-center relative overflow-hidden`}>
         <div className="relative z-10">
-          <h2 className="text-2xl font-bold mb-2">想要交流或贡献？</h2>
-          <p className="mb-6 opacity-90">我的所有开源项目都欢迎 Issue 和 PR，让我们一起构建更好的软件。</p>
+          <h2 className="text-2xl font-bold mb-2">{config.ctaTitle}</h2>
+          <p className="mb-6 opacity-90">{config.ctaDescription}</p>
           <a
-            href="https://github.com"
+            href={config.ctaButtonLink}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-xl font-semibold hover:bg-gray-100 transition-colors"
           >
-            访问 GitHub
+            {config.ctaButtonText}
             <ExternalLink size={18} />
           </a>
         </div>

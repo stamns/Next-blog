@@ -20,10 +20,37 @@ import type {
 // 主题配置选项
 const configOptions: ThemeConfigOption[] = [
   {
+    key: 'layoutWidth',
+    label: '布局宽度',
+    type: 'select',
+    options: [
+      { value: 'normal', label: '标准宽度 (1280px)' },
+      { value: 'wide', label: '宽屏 (1536px)' },
+      { value: 'full', label: '全屏' },
+    ],
+    default: 'normal',
+    description: '页面内容区域的最大宽度',
+  },
+  {
+    key: 'customMaxWidth',
+    label: '自定义最大宽度',
+    type: 'text',
+    default: '',
+    description: '自定义最大宽度（如 1400px），留空使用预设宽度',
+  },
+  {
+    key: 'showSidebar',
+    label: '显示侧边栏',
+    type: 'boolean',
+    default: false,
+    description: '在首页和文章列表页显示侧边栏',
+  },
+  {
     key: 'gridColumns',
     label: '网格列数',
     type: 'select',
     options: [
+      { value: '1', label: '1列' },
       { value: '2', label: '2列' },
       { value: '3', label: '3列' },
       { value: '4', label: '4列' },
@@ -84,6 +111,9 @@ const configOptions: ThemeConfigOption[] = [
 ];
 
 const defaultConfig: ThemeConfig = {
+  layoutWidth: 'normal',
+  customMaxWidth: '',
+  showSidebar: false,
   gridColumns: '3',
   cardStyle: 'gradient',
   showFeaturedImage: true,
@@ -123,9 +153,17 @@ const roundedClasses: Record<string, { card: string; button: string }> = {
 
 // 网格列数映射
 const gridClasses: Record<string, string> = {
+  '1': 'grid-cols-1',
   '2': 'md:grid-cols-2',
   '3': 'md:grid-cols-2 lg:grid-cols-3',
   '4': 'md:grid-cols-2 lg:grid-cols-4',
+};
+
+// 布局宽度映射
+const layoutWidthClasses: Record<string, string> = {
+  normal: 'max-w-7xl',
+  wide: 'max-w-[1536px]',
+  full: 'max-w-full px-4 md:px-8',
 };
 
 // ============ 布局 - 宽屏现代 ============
@@ -139,10 +177,25 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
   const footerText = settings.footerText?.replace('{year}', new Date().getFullYear().toString()) 
     || `© ${new Date().getFullYear()} ${siteName}`;
 
+  // 计算布局宽度
+  const getContainerStyle = () => {
+    if (config.customMaxWidth) {
+      return { maxWidth: config.customMaxWidth };
+    }
+    return {};
+  };
+
+  const layoutWidthClass = config.customMaxWidth 
+    ? 'w-full' 
+    : (layoutWidthClasses[config.layoutWidth] || layoutWidthClasses.normal);
+
+  const isFullWidth = config.layoutWidth === 'full';
+  const showSidebar = config.showSidebar;
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
+        <div className={`${layoutWidthClass} mx-auto px-4 md:px-6 py-4 flex items-center justify-between`} style={getContainerStyle()}>
           <Link href="/" className="flex items-center gap-2 md:gap-3">
             <div className={`w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br ${colors.gradient} ${rounded.button} flex items-center justify-center text-white font-bold text-sm md:text-lg`}>{siteName[0]}</div>
             <span className={`text-lg md:text-xl font-bold bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>{siteName}</span>
@@ -177,10 +230,19 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
         )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">{children}</main>
+      <main className={`${layoutWidthClass} mx-auto ${isFullWidth ? '' : 'px-4 md:px-6'} py-8 md:py-12`} style={getContainerStyle()}>
+        {showSidebar ? (
+          <div className="flex flex-col lg:flex-row gap-8">
+            <div className="flex-1 min-w-0">{children}</div>
+            <MagazineSidebar config={config} colors={colors} rounded={rounded} />
+          </div>
+        ) : (
+          children
+        )}
+      </main>
 
       <footer className="bg-gray-900 text-gray-400 py-8 md:py-12">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
+        <div className={`${layoutWidthClass} mx-auto px-4 md:px-6 text-center`} style={getContainerStyle()}>
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className={`w-8 h-8 bg-gradient-to-br ${colors.gradient} ${rounded.button} flex items-center justify-center text-white font-bold text-sm`}>{siteName[0]}</div>
             <span className="font-bold text-white">{siteName}</span>
@@ -202,6 +264,53 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
         </div>
       </footer>
     </div>
+  );
+}
+
+// ============ 侧边栏组件 ============
+function MagazineSidebar({ 
+  config, 
+  colors, 
+  rounded 
+}: { 
+  config: ThemeConfig; 
+  colors: { primary: string; gradient: string; text: string; bg: string };
+  rounded: { card: string; button: string };
+}) {
+  const { settings } = useSiteSettingsContext();
+
+  return (
+    <aside className="w-full lg:w-80 flex-shrink-0 space-y-6">
+      {/* 作者卡片 */}
+      <div className={`bg-white dark:bg-gray-900 ${rounded.card} p-6 shadow-sm`}>
+        <div className="text-center">
+          <div className={`w-20 h-20 mx-auto mb-4 bg-gradient-to-br ${colors.gradient} ${rounded.button} flex items-center justify-center text-white text-2xl font-bold`}>
+            {(settings.siteName || 'N')[0]}
+          </div>
+          <h3 className="font-bold text-lg">{settings.siteName || 'NextBlog'}</h3>
+          <p className="text-gray-500 text-sm mt-2">{settings.siteDescription || '一个现代化的博客'}</p>
+        </div>
+      </div>
+
+      {/* 快捷导航 */}
+      <div className={`bg-white dark:bg-gray-900 ${rounded.card} p-6 shadow-sm`}>
+        <h4 className={`font-bold mb-4 ${colors.text}`}>快捷导航</h4>
+        <div className="space-y-2">
+          <Link href="/categories" className="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+            📂 分类
+          </Link>
+          <Link href="/tags" className="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+            🏷️ 标签
+          </Link>
+          <Link href="/about" className="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+            👤 关于
+          </Link>
+          <Link href="/friends" className="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+            🔗 友链
+          </Link>
+        </div>
+      </div>
+    </aside>
   );
 }
 
