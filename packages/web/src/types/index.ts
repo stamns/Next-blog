@@ -120,6 +120,7 @@ export interface Project {
   slug: string;
   description: string;
   content?: string;
+  techStack?: string; // JSON array of tech stack tags
   githubUrl?: string;
   demoUrl?: string;
   docsUrl?: string;

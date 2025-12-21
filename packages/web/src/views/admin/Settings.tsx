@@ -560,6 +560,116 @@ function AIModelSettings() {
   );
 }
 
+// 快速链接编辑器组件
+function QuickLinksEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [links, setLinks] = useState<Array<{ label: string; url: string }>>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [form, setForm] = useState({ label: '', url: '' });
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        setLinks(parsed);
+      }
+    } catch {
+      setLinks([]);
+    }
+  }, [value]);
+
+  const handleSave = () => {
+    onChange(JSON.stringify(links));
+  };
+
+  const handleAdd = () => {
+    if (form.label && form.url) {
+      const newLinks = [...links, { label: form.label, url: form.url }];
+      setLinks(newLinks);
+      onChange(JSON.stringify(newLinks));
+      setForm({ label: '', url: '' });
+    }
+  };
+
+  const handleEdit = (index: number) => {
+    setEditingIndex(index);
+    setForm(links[index]);
+  };
+
+  const handleUpdate = () => {
+    if (editingIndex !== null && form.label && form.url) {
+      const newLinks = [...links];
+      newLinks[editingIndex] = { label: form.label, url: form.url };
+      setLinks(newLinks);
+      onChange(JSON.stringify(newLinks));
+      setEditingIndex(null);
+      setForm({ label: '', url: '' });
+    }
+  };
+
+  const handleDelete = (index: number) => {
+    const newLinks = links.filter((_, i) => i !== index);
+    setLinks(newLinks);
+    onChange(JSON.stringify(newLinks));
+  };
+
+  const handleMove = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= links.length) return;
+    const newLinks = [...links];
+    [newLinks[index], newLinks[targetIndex]] = [newLinks[targetIndex], newLinks[index]];
+    setLinks(newLinks);
+    onChange(JSON.stringify(newLinks));
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* 链接列表 */}
+      <div className="space-y-2">
+        {links.map((link, index) => (
+          <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="flex flex-col gap-1">
+              <button onClick={() => handleMove(index, 'up')} disabled={index === 0} className="text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">▲</button>
+              <button onClick={() => handleMove(index, 'down')} disabled={index === links.length - 1} className="text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs">▼</button>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm truncate">{link.label}</div>
+              <div className="text-xs text-gray-500 truncate">{link.url}</div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => handleEdit(index)}>编辑</Button>
+            <Button size="sm" variant="ghost" className="text-red-600" onClick={() => handleDelete(index)}>删除</Button>
+          </div>
+        ))}
+      </div>
+
+      {/* 添加/编辑表单 */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={form.label}
+          onChange={(e) => setForm({ ...form, label: e.target.value })}
+          placeholder="链接名称"
+          className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+        />
+        <input
+          type="text"
+          value={form.url}
+          onChange={(e) => setForm({ ...form, url: e.target.value })}
+          placeholder="链接地址"
+          className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+        />
+        {editingIndex !== null ? (
+          <>
+            <Button size="sm" onClick={handleUpdate}>更新</Button>
+            <Button size="sm" variant="outline" onClick={() => { setEditingIndex(null); setForm({ label: '', url: '' }); }}>取消</Button>
+          </>
+        ) : (
+          <Button size="sm" onClick={handleAdd}>添加</Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ThemeSettings() {
   const queryClient = useQueryClient();
 
@@ -701,7 +811,7 @@ function ThemeSettings() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {activeThemeData.configOptions.map((option: any) => (
-                <div key={option.key} className="space-y-2">
+                <div key={option.key} className={`space-y-2 ${option.type === 'json' ? 'md:col-span-2' : ''}`}>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {option.label}
                   </label>
@@ -730,6 +840,23 @@ function ThemeSettings() {
                         {mergedConfig[option.key] ? '已启用' : '已禁用'}
                       </span>
                     </label>
+                  )}
+
+                  {option.type === 'text' && (
+                    <input
+                      type="text"
+                      value={mergedConfig[option.key] || option.default || ''}
+                      onChange={(e) => handleConfigChange(option.key, e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary-500"
+                      placeholder={option.default || ''}
+                    />
+                  )}
+
+                  {option.type === 'json' && (
+                    <QuickLinksEditor
+                      value={mergedConfig[option.key] || option.default}
+                      onChange={(value) => handleConfigChange(option.key, value)}
+                    />
                   )}
                   
                   {option.description && (
@@ -836,12 +963,12 @@ function MenuSettings() {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery({
     queryKey: ['site-settings'],
     queryFn: () => api.get<Record<string, string>>('/settings'),
   });
 
-  const { data: pages } = useQuery({
+  const { data: pages, isLoading: pagesLoading, error: pagesError } = useQuery({
     queryKey: ['pages'],
     queryFn: () => api.get<any[]>('/pages'),
   });
@@ -1157,6 +1284,20 @@ function MenuSettings() {
       </div>
     );
   };
+
+  // 显示加载状态
+  if (settingsLoading || pagesLoading) {
+    return <div className="text-center py-8 text-gray-500">加载中...</div>;
+  }
+
+  // 显示错误状态
+  if (settingsError || pagesError) {
+    return (
+      <div className="p-4 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg">
+        加载失败: {((settingsError || pagesError) as Error).message}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

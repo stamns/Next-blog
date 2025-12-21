@@ -6,6 +6,7 @@ export interface CreateProjectInput {
   slug?: string;
   description: string;
   content?: string;
+  techStack?: string;
   githubUrl?: string;
   demoUrl?: string;
   docsUrl?: string;
@@ -22,6 +23,7 @@ export interface UpdateProjectInput {
   slug?: string;
   description?: string;
   content?: string;
+  techStack?: string;
   githubUrl?: string;
   demoUrl?: string;
   docsUrl?: string;
@@ -57,6 +59,7 @@ export class ProjectService {
         slug,
         description: input.description,
         content: input.content,
+        techStack: input.techStack,
         githubUrl: input.githubUrl,
         demoUrl: input.demoUrl,
         docsUrl: input.docsUrl,
@@ -123,6 +126,7 @@ export class ProjectService {
     if (input.slug !== undefined) data.slug = input.slug;
     if (input.description !== undefined) data.description = input.description;
     if (input.content !== undefined) data.content = input.content;
+    if (input.techStack !== undefined) data.techStack = input.techStack;
     if (input.githubUrl !== undefined) data.githubUrl = input.githubUrl;
     if (input.demoUrl !== undefined) data.demoUrl = input.demoUrl;
     if (input.docsUrl !== undefined) data.docsUrl = input.docsUrl;

@@ -207,6 +207,7 @@ model Project {
   slug          String           @unique
   description   String
   content       String?
+  techStack     String?          // JSON array of tech stack tags
   githubUrl     String?
   demoUrl       String?
   docsUrl       String?

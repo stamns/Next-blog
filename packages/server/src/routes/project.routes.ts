@@ -11,6 +11,7 @@ const createSchema = z.object({
   slug: z.string().optional(),
   description: z.string().min(1, 'Description is required'),
   content: z.string().optional(),
+  techStack: z.string().optional(),
   githubUrl: z.string().optional(),
   demoUrl: z.string().optional(),
   docsUrl: z.string().optional(),

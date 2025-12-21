@@ -30,6 +30,7 @@ export function ProjectsPage() {
     slug: '',
     description: '',
     content: '',
+    techStack: '',
     githubUrl: '',
     demoUrl: '',
     docsUrl: '',
@@ -83,7 +84,16 @@ export function ProjectsPage() {
       setError('名称和描述不能为空');
       return;
     }
-    const data = { ...form, categoryId: form.categoryId || undefined };
+    
+    // 处理技术栈格式
+    let techStack = form.techStack;
+    if (techStack && !techStack.startsWith('[')) {
+      // 如果不是 JSON 格式，尝试用逗号分隔转换
+      const tags = techStack.split(',').map(t => t.trim()).filter(Boolean);
+      techStack = JSON.stringify(tags);
+    }
+    
+    const data = { ...form, techStack, categoryId: form.categoryId || undefined };
     if (editingId) {
       await updateProject.mutateAsync({ id: editingId, data });
     } else {
@@ -98,6 +108,7 @@ export function ProjectsPage() {
       slug: project.slug,
       description: project.description,
       content: project.content || '',
+      techStack: project.techStack || '',
       githubUrl: project.githubUrl || '',
       demoUrl: project.demoUrl || '',
       docsUrl: project.docsUrl || '',
@@ -121,7 +132,7 @@ export function ProjectsPage() {
     setIsModalOpen(false);
     setEditingId(null);
     setForm({
-      name: '', slug: '', description: '', content: '', githubUrl: '', demoUrl: '',
+      name: '', slug: '', description: '', content: '', techStack: '', githubUrl: '', demoUrl: '',
       docsUrl: '', featuredImage: '', status: 'DRAFT', isRecommended: false,
       isPinned: false, sortOrder: 0, categoryId: '',
     });
@@ -210,6 +221,12 @@ export function ProjectsPage() {
             <Input label="链接" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="留空自动生成" />
           </div>
           <Textarea label="简介" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
+          <Input 
+            label="技术栈" 
+            value={form.techStack} 
+            onChange={(e) => setForm({ ...form, techStack: e.target.value })} 
+            placeholder='["React", "TypeScript", "Node.js"] 或用逗号分隔: React, TypeScript, Node.js'
+          />
           <Textarea label="详细说明 (Markdown)" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="min-h-[120px]" />
           <div className="grid grid-cols-3 gap-4">
             <Input label="GitHub" value={form.githubUrl} onChange={(e) => setForm({ ...form, githubUrl: e.target.value })} placeholder="https://github.com/..." />

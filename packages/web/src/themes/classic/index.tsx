@@ -38,11 +38,43 @@ const configOptions: ThemeConfigOption[] = [
     description: '在侧边栏显示作者信息',
   },
   {
+    key: 'authorName',
+    label: '作者名称',
+    type: 'text',
+    default: '博主',
+    description: '显示在作者卡片的名称',
+  },
+  {
+    key: 'authorAvatar',
+    label: '作者头像',
+    type: 'text',
+    default: '',
+    description: '头像图片URL，留空使用默认头像',
+  },
+  {
+    key: 'authorBio',
+    label: '作者简介',
+    type: 'text',
+    default: '热爱技术，热爱生活',
+    description: '显示在作者卡片的简介',
+  },
+  {
     key: 'showQuickLinks',
     label: '显示快速链接',
     type: 'boolean',
     default: true,
     description: '在侧边栏显示快速链接',
+  },
+  {
+    key: 'quickLinks',
+    label: '快速链接',
+    type: 'json',
+    default: JSON.stringify([
+      { label: '所有分类', url: '/categories' },
+      { label: '标签云', url: '/tags' },
+      { label: '知识库', url: '/knowledge' },
+    ]),
+    description: '自定义快速链接，JSON格式：[{"label":"名称","url":"链接"}]',
   },
   {
     key: 'showFeaturedImage',
@@ -80,7 +112,15 @@ const configOptions: ThemeConfigOption[] = [
 const defaultConfig: ThemeConfig = {
   layout: 'sidebar',
   showAuthorCard: true,
+  authorName: '博主',
+  authorAvatar: '',
+  authorBio: '热爱技术，热爱生活',
   showQuickLinks: true,
+  quickLinks: JSON.stringify([
+    { label: '所有分类', url: '/categories' },
+    { label: '标签云', url: '/tags' },
+    { label: '知识库', url: '/knowledge' },
+  ]),
   showFeaturedImage: false,
   articlesPerRow: '1',
   primaryColor: 'amber',
@@ -159,8 +199,13 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
                 <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-sm border border-stone-200 dark:border-stone-700">
                   <h3 className="font-serif font-bold text-lg mb-4 pb-2 border-b border-stone-200 dark:border-stone-700">👤 关于博主</h3>
                   <div className="text-center">
-                    <div className={`w-20 h-20 bg-gradient-to-br ${colors.gradient} rounded-full mx-auto mb-3 flex items-center justify-center text-3xl text-white`}>🧑‍💻</div>
-                    <p className="text-sm text-stone-600 dark:text-stone-400">热爱技术，热爱生活</p>
+                    {config.authorAvatar ? (
+                      <img src={config.authorAvatar} alt={config.authorName || '博主'} className="w-20 h-20 rounded-full mx-auto mb-3 object-cover" />
+                    ) : (
+                      <div className={`w-20 h-20 bg-gradient-to-br ${colors.gradient} rounded-full mx-auto mb-3 flex items-center justify-center text-3xl text-white`}>🧑‍💻</div>
+                    )}
+                    {config.authorName && <p className="font-medium text-stone-800 dark:text-stone-200 mb-1">{config.authorName}</p>}
+                    <p className="text-sm text-stone-600 dark:text-stone-400">{config.authorBio || '热爱技术，热爱生活'}</p>
                   </div>
                 </div>
               )}
@@ -168,9 +213,24 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
                 <div className="bg-white dark:bg-stone-800 rounded-lg p-6 shadow-sm border border-stone-200 dark:border-stone-700">
                   <h3 className="font-serif font-bold text-lg mb-4 pb-2 border-b border-stone-200 dark:border-stone-700">🔗 快速链接</h3>
                   <div className="space-y-2 text-sm">
-                    <Link href="/categories" className={`block text-stone-600 dark:text-stone-400 ${colors.hover}`}>→ 所有分类</Link>
-                    <Link href="/tags" className={`block text-stone-600 dark:text-stone-400 ${colors.hover}`}>→ 标签云</Link>
-                    <Link href="/knowledge" className={`block text-stone-600 dark:text-stone-400 ${colors.hover}`}>→ 知识库</Link>
+                    {(() => {
+                      try {
+                        const links = typeof config.quickLinks === 'string' ? JSON.parse(config.quickLinks) : config.quickLinks;
+                        if (Array.isArray(links) && links.length > 0) {
+                          return links.map((link: { label: string; url: string }, index: number) => (
+                            <Link key={index} href={link.url} className={`block text-stone-600 dark:text-stone-400 ${colors.hover}`}>→ {link.label}</Link>
+                          ));
+                        }
+                      } catch {}
+                      // 默认链接
+                      return (
+                        <>
+                          <Link href="/categories" className={`block text-stone-600 dark:text-stone-400 ${colors.hover}`}>→ 所有分类</Link>
+                          <Link href="/tags" className={`block text-stone-600 dark:text-stone-400 ${colors.hover}`}>→ 标签云</Link>
+                          <Link href="/knowledge" className={`block text-stone-600 dark:text-stone-400 ${colors.hover}`}>→ 知识库</Link>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

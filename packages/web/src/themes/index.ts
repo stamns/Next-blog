@@ -79,7 +79,7 @@ export interface SearchResultProps {
 export interface ThemeConfigOption {
   key: string;
   label: string;
-  type: 'select' | 'boolean' | 'color' | 'number';
+  type: 'select' | 'boolean' | 'color' | 'number' | 'text' | 'json';
   options?: { value: string; label: string }[];
   default: any;
   description?: string;
