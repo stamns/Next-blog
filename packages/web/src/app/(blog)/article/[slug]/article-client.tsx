@@ -18,7 +18,7 @@ interface ArticleDetailClientProps {
 }
 
 export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
-  const { theme, themeConfig } = useThemeContext();
+  const { theme, themeConfig, themeName } = useThemeContext();
   const { isCommentEnabled } = useSiteSettingsStore();
   const { ArticleDetail } = theme;
   const [tocOpen, setTocOpen] = useState(false);
@@ -28,9 +28,30 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
     ? article.toc 
     : article.content ? extractTOC(article.content) : [];
 
+  // 根据主题确定目录样式
+  const isCyberTheme = themeName === 'cyber';
+  const tocCardClass = isCyberTheme 
+    ? 'bg-white/[0.02] border border-white/10 backdrop-blur-xl' 
+    : '';
+  const tocTitleClass = isCyberTheme 
+    ? 'text-white/60 font-mono uppercase tracking-wider' 
+    : '';
+  const tocLinkClass = isCyberTheme
+    ? 'text-slate-400 hover:text-emerald-400'
+    : 'text-gray-800 dark:text-gray-200 hover:text-primary-600';
+  const tocSubLinkClass = isCyberTheme
+    ? 'text-slate-500 hover:text-emerald-400'
+    : 'text-gray-600 dark:text-gray-400 hover:text-primary-600';
+  const tocBorderClass = isCyberTheme
+    ? 'border-white/10'
+    : 'border-gray-200 dark:border-gray-700';
+  const mobileToggleClass = isCyberTheme
+    ? 'bg-white/[0.02] border-white/10 text-slate-300'
+    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
+
   // 递归渲染目录项，根据层级显示不同缩进
   const renderTocItems = (items: TOCItem[], depth: number = 0) => (
-    <ul className={depth > 0 ? 'ml-3 mt-1 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-2' : 'space-y-2'}>
+    <ul className={depth > 0 ? `ml-3 mt-1 space-y-1 border-l ${tocBorderClass} pl-2` : 'space-y-2'}>
       {items.map((item, index) => (
         <li key={`${item.id}-${index}`}>
           <a
@@ -44,10 +65,10 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
                 window.history.pushState(null, '', `#${item.id}`);
               }
             }}
-            className={`block hover:text-primary-600 transition-colors line-clamp-2 ${
+            className={`block transition-colors line-clamp-2 ${
               depth === 0 
-                ? 'text-gray-800 dark:text-gray-200 font-medium' 
-                : 'text-gray-600 dark:text-gray-400 text-sm'
+                ? `${tocLinkClass} font-medium` 
+                : `${tocSubLinkClass} text-sm`
             }`}
             title={item.text}
           >
@@ -66,7 +87,7 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
         <div className="lg:hidden mb-4">
           <button
             onClick={() => setTocOpen(!tocOpen)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border ${mobileToggleClass}`}
           >
             <span className="font-medium">目录</span>
             <svg
@@ -79,7 +100,7 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
             </svg>
           </button>
           {tocOpen && (
-            <nav className="mt-2 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+            <nav className={`mt-2 p-4 rounded-lg border text-sm ${mobileToggleClass}`}>
               {renderTocItems(toc)}
             </nav>
           )}
@@ -90,9 +111,9 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
         {/* 侧边栏 - 目录（左侧，仅桌面端） */}
         {toc.length > 0 && (
           <aside className="hidden lg:block lg:order-first lg:col-span-1 min-w-[200px]">
-            <Card className="sticky top-20">
+            <Card className={`sticky top-20 ${tocCardClass}`}>
               <CardContent className="p-4">
-                <h3 className="font-semibold mb-4 text-sm">目录</h3>
+                <h3 className={`font-semibold mb-4 text-sm ${tocTitleClass}`}>目录</h3>
                 <nav className="text-sm max-h-[70vh] overflow-y-auto pr-1">
                   {renderTocItems(toc)}
                 </nav>

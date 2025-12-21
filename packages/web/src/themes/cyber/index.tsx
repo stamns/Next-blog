@@ -1,7 +1,6 @@
 // 赛博朋克主题 - 科技感极光背景，深色调，霓虹高亮
 import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ThemeToggle } from '../../components/ThemeToggle';
 import { SearchBox } from '../../components/SearchBox';
 import { DesktopNavMenu, MobileNavMenu } from '../../components/NavMenu';
 import { formatDate, truncate } from '../../lib/utils';
@@ -73,6 +72,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '在导航栏显示系统运行时间',
   },
   {
+    key: 'showFeaturedImage',
+    label: '显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章卡片中显示特色图片',
+  },
+  {
     key: 'cardStyle',
     label: '卡片样式',
     type: 'select',
@@ -131,6 +137,7 @@ const defaultConfig: ThemeConfig = {
   showAurora: true,
   showGrid: true,
   showUptime: true,
+  showFeaturedImage: true,
   cardStyle: 'glass',
   gridColumns: '2',
   heroTitle: 'CORE_PRISM',
@@ -294,7 +301,6 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
 
           <div className="flex items-center gap-2 md:gap-4">
             <SearchBox />
-            <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-white/40"

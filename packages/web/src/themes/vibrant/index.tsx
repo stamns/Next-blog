@@ -60,6 +60,13 @@ const configOptions: ThemeConfigOption[] = [
     description: '显示装饰性点阵图案',
   },
   {
+    key: 'showFeaturedImage',
+    label: '显示特色图',
+    type: 'boolean',
+    default: true,
+    description: '在文章卡片中显示特色图片',
+  },
+  {
     key: 'cardStyle',
     label: '卡片样式',
     type: 'select',
@@ -129,6 +136,7 @@ const defaultConfig: ThemeConfig = {
   colorScheme: 'rainbow',
   showBlobs: true,
   showDots: true,
+  showFeaturedImage: true,
   cardStyle: 'glass',
   cardRadius: 'large',
   gridColumns: '3',
@@ -256,22 +264,22 @@ function BlogLayout({ children, config = defaultConfig }: { children: ReactNode;
       <ChromaticBackground config={config} />
 
       {/* 浮动导航栏 */}
-      <header className="sticky top-4 md:top-6 mx-auto max-w-4xl z-50 px-4">
+      <header className="sticky top-4 md:top-6 mx-auto max-w-6xl z-50 px-4">
         <div className={`bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white dark:border-slate-800 ${radius.card} shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] h-16 flex items-center justify-between px-4 md:px-6`}>
-          <Link href="/" className="flex items-center gap-3 group cursor-pointer">
+          <Link href="/" className="flex items-center gap-3 group cursor-pointer shrink-0">
             <div
               className={`w-10 h-10 bg-gradient-to-br ${colors.gradient} ${radius.button} flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform`}
             >
               <Command size={20} className="text-white" />
             </div>
-            <span className="font-black text-xl tracking-tighter leading-none">
+            <span className="font-black text-xl tracking-tighter leading-none hidden sm:block">
               {siteName}<span style={{ color: colors.secondary }}>.</span>
             </span>
           </Link>
 
           <DesktopNavMenu
             items={navMenu}
-            itemClassName="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            itemClassName="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap"
           />
 
           <div className="flex items-center gap-2 md:gap-4">
@@ -375,8 +383,16 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
 
       <Link href={`/article/${article.slug}`}>
         <h3
-          className={`text-xl md:text-2xl font-black text-slate-800 dark:text-white mb-4 group-hover:text-transparent group-hover:bg-clip-text transition-all duration-500 line-clamp-2`}
-          style={{ backgroundImage: `linear-gradient(to right, ${cardColor}, ${colors.secondary})` }}
+          className="text-xl md:text-2xl font-black text-slate-800 dark:text-white mb-4 line-clamp-2 transition-colors duration-300"
+          style={{ 
+            color: undefined 
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = cardColor;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '';
+          }}
         >
           {article.title}
         </h3>

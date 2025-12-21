@@ -1915,7 +1915,10 @@ function BlogLayout({ children, config }) {
               </pre>
 
               <h4>6. 注册主题</h4>
-              <p>在 <code>packages/web/src/themes/index.ts</code> 中注册你的主题：</p>
+              <p>主题需要在前端和后端两处注册：</p>
+              
+              <p><strong>步骤 1：前端注册</strong></p>
+              <p>在 <code>packages/web/src/themes/index.ts</code> 中导入并注册你的主题：</p>
               <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
 {`import { YourTheme } from './your-theme';
 
@@ -1923,17 +1926,81 @@ export const themes: Record<string, ThemeComponents> = {
   classic: ClassicTheme,
   minimal: MinimalTheme,
   magazine: MagazineTheme,
+  cyber: CyberTheme,
+  vibrant: VibrantTheme,
   'your-theme': YourTheme,  // 添加你的主题
 };`}
               </pre>
+
+              <p><strong>步骤 2：后端注册</strong></p>
+              <p>在 <code>packages/server/src/services/theme.service.ts</code> 的 <code>initBuiltinThemes</code> 方法中添加主题：</p>
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+{`// 在 builtinThemes 数组中添加
+{
+  name: 'your-theme',        // 必须与前端 themes 对象的 key 一致
+  version: '1.0.0',
+  path: '/themes/your-theme',
+  isActive: false,
+  config: JSON.stringify({
+    displayName: '你的主题名称',
+    description: '主题描述',
+  }),
+},`}
+              </pre>
+              <p className="text-amber-600 dark:text-amber-400">
+                ⚠️ 注意：后端的 <code>name</code> 必须与前端 <code>themes</code> 对象中的 key 完全一致，否则主题无法正常显示。
+                添加后需要重启后端服务，新主题会自动注册到数据库。
+              </p>
 
               <h4>7. 示例主题</h4>
               <p>参考现有主题的实现：</p>
               <ul>
                 <li><code>classic</code> - 经典两栏布局，支持侧边栏、作者卡片、快速链接</li>
                 <li><code>minimal</code> - 极简风格，大量留白，专注阅读</li>
-                <li><code>magazine</code> - 杂志风格，大图卡片网格，渐变配色</li>
+                <li><code>magazine</code> - 杂志风格，大图卡片网格，渐变配色，支持全屏和自定义宽度</li>
+                <li><code>cyber</code> - 赛博朋克风格，极光背景，霓虹高亮，适合技术博客</li>
+                <li><code>vibrant</code> - 活力主题，幻彩流体背景，明亮色调，圆润卡片</li>
               </ul>
+
+              <h4>8. 主题组件 Props</h4>
+              <p>各组件接收的 Props 类型定义：</p>
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+{`// 文章卡片
+interface ArticleCardProps {
+  article: {
+    id: string;
+    title: string;
+    slug: string;
+    excerpt?: string | null;
+    content: string;
+    featuredImage?: string | null;
+    publishedAt?: string | null;
+    createdAt: string;
+    category?: { id: string; name: string } | null;
+    tags?: { id: string; name: string }[];
+    viewCount?: number;
+  };
+  config?: ThemeConfig;
+}
+
+// 文章详情
+interface ArticleDetailProps {
+  article: {
+    id: string;
+    title: string;
+    slug: string;
+    content: string;
+    htmlContent?: string | null;
+    publishedAt?: string | null;
+    createdAt: string;
+    category?: { id: string; name: string } | null;
+    tags?: { id: string; name: string }[];
+    author?: { username: string } | null;
+    viewCount?: number;
+  };
+  config?: ThemeConfig;
+}`}
+              </pre>
             </div>
           )}
 
