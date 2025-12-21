@@ -427,86 +427,85 @@ function ArticleCard({ article, config = defaultConfig }: ArticleCardProps & { c
   const excerptLength = config.excerptLength || 120;
 
   return (
-    <article className={`group relative mb-8 p-6 md:p-8 rounded-2xl md:rounded-3xl ${p.glass} ${p.darkGlass} border border-white/10 backdrop-blur-sm transition-all duration-500 hover:border-white/30 hover:shadow-xl`}>
+    <article className={`group relative mb-6 rounded-2xl md:rounded-3xl ${p.glass} ${p.darkGlass} border border-white/10 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] hover:border-white/30 hover:shadow-xl overflow-hidden`}>
       {/* 背景发光效果 */}
       <div
         className={`absolute -inset-1 bg-gradient-to-br ${p.gradient} rounded-3xl -z-10 opacity-0 group-hover:opacity-20 blur-xl transition-opacity`}
       />
       
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* 特色图片 */}
-        {showFeaturedImage && article.featuredImage && (
-          <div className="md:w-48 lg:w-56 shrink-0">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl md:rounded-2xl">
-              <img
-                src={article.featuredImage}
-                alt={article.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className={`absolute inset-0 bg-gradient-to-br ${p.gradient} mix-blend-color opacity-20`} />
+      {/* 特色图片 - 在卡片顶部，参考 vibrant 主题样式 */}
+      {showFeaturedImage && article.featuredImage && (
+        <div className="relative h-48 md:h-56 overflow-hidden">
+          <img
+            src={article.featuredImage}
+            alt={article.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          {/* 渐变遮罩 */}
+          <div className={`absolute inset-0 bg-gradient-to-t ${p.isLightTheme ? 'from-white/80 via-white/20' : 'from-black/80 via-black/20'} to-transparent`} />
+          {/* 色彩叠加 */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${p.gradient} mix-blend-overlay opacity-30`} />
+        </div>
+      )}
+
+      {/* 内容区域 */}
+      <div className="p-6 md:p-8">
+        {/* 元信息 */}
+        <div className={`flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-wider opacity-60 mb-3 ${p.text} ${p.darkText}`}>
+          <span className="flex items-center gap-1.5">
+            <Orbit size={14} style={{ color: p.primary }} />
+            {article.category?.name || '未分类'}
+          </span>
+          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: p.primary }} />
+          <span className="flex items-center gap-1">
+            <Clock size={12} />
+            {formatDate(article.publishedAt || article.createdAt).split(' ')[0]}
+          </span>
+          <span className="flex items-center gap-1">
+            <Eye size={12} />
+            {article.viewCount || 0}
+          </span>
+        </div>
+
+        {/* 标题 */}
+        <Link href={`/article/${article.slug}`}>
+          <h2 className={`text-xl md:text-2xl font-black tracking-tight leading-tight mb-3 ${p.title} ${p.darkTitle} group-hover:opacity-80 transition-opacity line-clamp-2`}>
+            {article.title}
+          </h2>
+        </Link>
+
+        {/* 摘要 */}
+        <p className={`text-sm md:text-base opacity-60 leading-relaxed mb-4 line-clamp-2 ${p.text} ${p.darkText}`}>
+          {truncate(article.excerpt || article.content, excerptLength)}
+        </p>
+
+        {/* 底部：标签和阅读更多 */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          {/* 标签 */}
+          {article.tags && article.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {article.tags.slice(0, 3).map((tag) => (
+                <Link
+                  key={tag.id}
+                  href={`/tag/${tag.id}`}
+                  className={`text-xs font-bold px-3 py-1 rounded-full border border-white/20 ${p.glass} hover:border-white/40 transition-colors`}
+                  style={{ color: p.primary }}
+                >
+                  #{tag.name}
+                </Link>
+              ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 内容区域 */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between">
-          {/* 元信息 */}
-          <div className={`flex items-center gap-3 text-xs font-bold uppercase tracking-wider opacity-60 mb-3 ${p.text} ${p.darkText}`}>
-            <span className="flex items-center gap-1.5">
-              <Orbit size={14} style={{ color: p.primary }} />
-              {article.category?.name || '未分类'}
-            </span>
-            <span className="w-1 h-1 rounded-full" style={{ backgroundColor: p.primary }} />
-            <span className="flex items-center gap-1">
-              <Clock size={12} />
-              {formatDate(article.publishedAt || article.createdAt).split(' ')[0]}
-            </span>
-            <span className="flex items-center gap-1">
-              <Eye size={12} />
-              {article.viewCount || 0}
-            </span>
-          </div>
-
-          {/* 标题 */}
-          <Link href={`/article/${article.slug}`}>
-            <h2 className={`text-xl md:text-2xl font-black tracking-tight leading-tight mb-3 ${p.title} ${p.darkTitle} group-hover:opacity-80 transition-opacity line-clamp-2`}>
-              {article.title}
-            </h2>
+          {/* 阅读更多 */}
+          <Link
+            href={`/article/${article.slug}`}
+            className="shrink-0 flex items-center gap-2 text-xs font-black uppercase tracking-wider group-hover:gap-3 transition-all"
+            style={{ color: p.primary }}
+          >
+            阅读全文
+            <ArrowUpRight size={14} />
           </Link>
-
-          {/* 摘要 */}
-          <p className={`text-sm md:text-base opacity-60 leading-relaxed mb-4 line-clamp-2 ${p.text} ${p.darkText}`}>
-            {truncate(article.excerpt || article.content, excerptLength)}
-          </p>
-
-          {/* 底部：标签和阅读更多 */}
-          <div className="flex items-center justify-between gap-4">
-            {/* 标签 */}
-            {article.tags && article.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {article.tags.slice(0, 3).map((tag) => (
-                  <Link
-                    key={tag.id}
-                    href={`/tag/${tag.id}`}
-                    className={`text-xs font-bold px-3 py-1 rounded-full border border-white/20 ${p.glass} hover:border-white/40 transition-colors`}
-                    style={{ color: p.primary }}
-                  >
-                    #{tag.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* 阅读更多 */}
-            <Link
-              href={`/article/${article.slug}`}
-              className="shrink-0 flex items-center gap-2 text-xs font-black uppercase tracking-wider group-hover:gap-3 transition-all"
-              style={{ color: p.primary }}
-            >
-              阅读全文
-              <ArrowUpRight size={14} />
-            </Link>
-          </div>
         </div>
       </div>
     </article>
