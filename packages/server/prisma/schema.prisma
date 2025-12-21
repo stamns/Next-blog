@@ -201,6 +201,58 @@ model PageView {
   createdAt DateTime @default(now())
 }
 
+// 访客统计 - 记录每个访客的详细信息
+model Visitor {
+  id           String         @id @default(cuid())
+  visitorId    String         @unique // 浏览器指纹或UUID
+  ip           String?
+  country      String?        // 国家
+  region       String?        // 地区/省份
+  city         String?        // 城市
+  browser      String?        // 浏览器名称
+  browserVer   String?        // 浏览器版本
+  os           String?        // 操作系统
+  osVer        String?        // 操作系统版本
+  device       String?        // 设备类型: desktop/mobile/tablet
+  screenWidth  Int?           // 屏幕宽度
+  screenHeight Int?           // 屏幕高度
+  language     String?        // 浏览器语言
+  timezone     String?        // 时区
+  firstVisit   DateTime       @default(now())
+  lastVisit    DateTime       @default(now())
+  visitCount   Int            @default(1)
+  sessions     VisitorSession[]
+}
+
+// 访客会话 - 记录每次访问会话
+model VisitorSession {
+  id          String        @id @default(cuid())
+  visitorId   String
+  visitor     Visitor       @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  referer     String?       // 来源页面
+  utmSource   String?       // UTM来源
+  utmMedium   String?       // UTM媒介
+  utmCampaign String?       // UTM活动
+  startTime   DateTime      @default(now())
+  endTime     DateTime?
+  duration    Int?          // 会话时长(秒)
+  pageViews   VisitorPageView[]
+}
+
+// 访客页面浏览 - 记录每个页面的访问
+model VisitorPageView {
+  id          String         @id @default(cuid())
+  sessionId   String
+  session     VisitorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  path        String         // 页面路径
+  title       String?        // 页面标题
+  articleId   String?        // 关联文章ID
+  enterTime   DateTime       @default(now())
+  leaveTime   DateTime?
+  duration    Int?           // 页面停留时长(秒)
+  scrollDepth Int?           // 滚动深度百分比
+}
+
 model Project {
   id            String           @id @default(cuid())
   name          String
@@ -211,6 +263,9 @@ model Project {
   githubUrl     String?
   demoUrl       String?
   docsUrl       String?
+  chromeUrl     String?          // Chrome Web Store URL
+  firefoxUrl    String?          // Firefox Add-ons URL
+  npmUrl        String?          // NPM package URL
   featuredImage String?
   status        String           @default("DRAFT")
   isRecommended Boolean          @default(false)

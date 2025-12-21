@@ -34,6 +34,9 @@ export function ProjectsPage() {
     githubUrl: '',
     demoUrl: '',
     docsUrl: '',
+    chromeUrl: '',
+    firefoxUrl: '',
+    npmUrl: '',
     featuredImage: '',
     status: 'DRAFT' as 'DRAFT' | 'PUBLISHED',
     isRecommended: false,
@@ -112,6 +115,9 @@ export function ProjectsPage() {
       githubUrl: project.githubUrl || '',
       demoUrl: project.demoUrl || '',
       docsUrl: project.docsUrl || '',
+      chromeUrl: project.chromeUrl || '',
+      firefoxUrl: project.firefoxUrl || '',
+      npmUrl: project.npmUrl || '',
       featuredImage: project.featuredImage || '',
       status: project.status,
       isRecommended: project.isRecommended,
@@ -133,7 +139,7 @@ export function ProjectsPage() {
     setEditingId(null);
     setForm({
       name: '', slug: '', description: '', content: '', techStack: '', githubUrl: '', demoUrl: '',
-      docsUrl: '', featuredImage: '', status: 'DRAFT', isRecommended: false,
+      docsUrl: '', chromeUrl: '', firefoxUrl: '', npmUrl: '', featuredImage: '', status: 'DRAFT', isRecommended: false,
       isPinned: false, sortOrder: 0, categoryId: '',
     });
     setError(null);
@@ -232,6 +238,11 @@ export function ProjectsPage() {
             <Input label="GitHub" value={form.githubUrl} onChange={(e) => setForm({ ...form, githubUrl: e.target.value })} placeholder="https://github.com/..." />
             <Input label="演示地址" value={form.demoUrl} onChange={(e) => setForm({ ...form, demoUrl: e.target.value })} placeholder="https://..." />
             <Input label="文档地址" value={form.docsUrl} onChange={(e) => setForm({ ...form, docsUrl: e.target.value })} placeholder="https://..." />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Input label="Chrome商店" value={form.chromeUrl} onChange={(e) => setForm({ ...form, chromeUrl: e.target.value })} placeholder="https://chrome.google.com/..." />
+            <Input label="Firefox商店" value={form.firefoxUrl} onChange={(e) => setForm({ ...form, firefoxUrl: e.target.value })} placeholder="https://addons.mozilla.org/..." />
+            <Input label="NPM包" value={form.npmUrl} onChange={(e) => setForm({ ...form, npmUrl: e.target.value })} placeholder="https://www.npmjs.com/..." />
           </div>
           <Input label="特色图片" value={form.featuredImage} onChange={(e) => setForm({ ...form, featuredImage: e.target.value })} placeholder="图片URL" />
           <div className="grid grid-cols-3 gap-4">

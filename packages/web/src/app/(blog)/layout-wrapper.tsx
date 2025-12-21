@@ -6,6 +6,7 @@ import { useBlogThemeStore } from '@/stores/blog-theme.store';
 import { getTheme } from '@/themes';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { SiteSettingsProvider } from '@/contexts/site-settings-context';
+import { VisitorTracker } from '@/components/VisitorTracker';
 import type { PublicStats } from '@/lib/api-server';
 
 interface BlogLayoutWrapperProps {
@@ -46,6 +47,7 @@ export function BlogLayoutWrapper({
   return (
     <SiteSettingsProvider settings={settings}>
       <ThemeProvider themeName={theme} themeConfig={configWithStats}>
+        <VisitorTracker />
         <BlogLayout config={configWithStats}>{children}</BlogLayout>
       </ThemeProvider>
     </SiteSettingsProvider>

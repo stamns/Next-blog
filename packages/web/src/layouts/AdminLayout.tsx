@@ -17,6 +17,7 @@ const menuItems = [
   { path: '/admin/media', label: '媒体库', icon: '🖼️' },
   { path: '/admin/knowledge', label: '知识库', icon: '📚' },
   { path: '/admin/comments', label: '评论管理', icon: '💬' },
+  { path: '/admin/analytics', label: '网站统计', icon: '📈' },
   { path: '/admin/ai', label: 'AI 写作', icon: '🤖' },
   { path: '/admin/settings', label: '系统设置', icon: '⚙️' },
 ];

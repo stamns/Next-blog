@@ -11,6 +11,8 @@ import {
   Layers,
   Star,
   Pin,
+  Chrome,
+  Package,
 } from 'lucide-react';
 import { useThemeContext } from '@/contexts/theme-context';
 import { useSiteSettingsContext } from '@/contexts/site-settings-context';
@@ -437,13 +439,14 @@ function ProjectCard({
         )}
 
         {/* 操作按钮 */}
-        <div className="flex border-t border-gray-100 dark:border-gray-700 -mx-5 -mb-5 mt-4">
+        <div className="flex flex-wrap border-t border-gray-100 dark:border-gray-700 -mx-5 -mb-5 mt-4">
           {project.githubUrl && (
             <a
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              title="GitHub"
             >
               <Github size={14} /> Code
             </a>
@@ -454,6 +457,7 @@ function ProjectCard({
               target="_blank"
               rel="noopener noreferrer"
               className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm ${colors.accentText} hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-l border-gray-100 dark:border-gray-700`}
+              title="演示"
             >
               <ExternalLink size={14} /> Demo
             </a>
@@ -464,11 +468,34 @@ function ProjectCard({
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-l border-gray-100 dark:border-gray-700"
+              title="文档"
             >
               <FileText size={14} /> Docs
             </a>
           )}
-          {!project.githubUrl && !project.demoUrl && !project.docsUrl && (
+          {project.chromeUrl && (
+            <a
+              href={project.chromeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-l border-gray-100 dark:border-gray-700"
+              title="Chrome商店"
+            >
+              <Chrome size={14} /> Chrome
+            </a>
+          )}
+          {project.npmUrl && (
+            <a
+              href={project.npmUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-l border-gray-100 dark:border-gray-700"
+              title="NPM"
+            >
+              <Package size={14} /> NPM
+            </a>
+          )}
+          {!project.githubUrl && !project.demoUrl && !project.docsUrl && !project.chromeUrl && !project.npmUrl && !project.firefoxUrl && (
             <div className="flex-1 flex items-center justify-center py-3 text-sm text-gray-400">
               暂无链接
             </div>

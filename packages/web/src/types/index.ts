@@ -124,6 +124,9 @@ export interface Project {
   githubUrl?: string;
   demoUrl?: string;
   docsUrl?: string;
+  chromeUrl?: string;   // Chrome Web Store URL
+  firefoxUrl?: string;  // Firefox Add-ons URL
+  npmUrl?: string;      // NPM package URL
   featuredImage?: string;
   status: 'DRAFT' | 'PUBLISHED';
   isRecommended: boolean;
@@ -156,4 +159,101 @@ export interface FriendLink {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// 访客统计相关类型
+export interface Visitor {
+  id: string;
+  visitorId: string;
+  ip?: string;
+  country?: string;
+  region?: string;
+  city?: string;
+  browser?: string;
+  browserVer?: string;
+  os?: string;
+  osVer?: string;
+  device?: string;
+  screenWidth?: number;
+  screenHeight?: number;
+  language?: string;
+  timezone?: string;
+  firstVisit: string;
+  lastVisit: string;
+  visitCount: number;
+}
+
+export interface VisitorSession {
+  id: string;
+  visitorId: string;
+  referer?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+  pageViews?: VisitorPageView[];
+}
+
+export interface VisitorPageView {
+  id: string;
+  sessionId: string;
+  path: string;
+  title?: string;
+  articleId?: string;
+  enterTime: string;
+  leaveTime?: string;
+  duration?: number;
+  scrollDepth?: number;
+}
+
+// 统计数据汇总
+export interface AnalyticsSummary {
+  totalVisitors: number;
+  totalSessions: number;
+  totalPageViews: number;
+  avgSessionDuration: number;
+  avgPageDuration: number;
+  bounceRate: number;
+  todayVisitors: number;
+  todaySessions: number;
+  todayPageViews: number;
+}
+
+export interface AnalyticsTimeSeriesData {
+  date: string;
+  visitors: number;
+  sessions: number;
+  pageViews: number;
+}
+
+export interface AnalyticsTopPage {
+  path: string;
+  title?: string;
+  views: number;
+  avgDuration: number;
+}
+
+export interface AnalyticsTopReferer {
+  referer: string;
+  count: number;
+}
+
+export interface AnalyticsDeviceStats {
+  device: string;
+  count: number;
+  percentage: number;
+}
+
+export interface AnalyticsBrowserStats {
+  browser: string;
+  count: number;
+  percentage: number;
+}
+
+export interface AnalyticsCountryStats {
+  country: string;
+  count: number;
+  percentage: number;
 }

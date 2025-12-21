@@ -19,6 +19,7 @@ import prerenderRoutes from './routes/prerender.routes.js';
 import projectRoutes from './routes/project.routes.js';
 import projectCategoryRoutes from './routes/project-category.routes.js';
 import friendLinkRoutes from './routes/friend-link.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 import { themeService } from './services/theme.service.js';
 
 const app = express();
@@ -68,6 +69,7 @@ app.use('/api/prerender', prerenderRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/project-categories', projectCategoryRoutes);
 app.use('/api/friend-links', friendLinkRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Error handler
 app.use(errorHandler);
