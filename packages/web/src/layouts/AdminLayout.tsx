@@ -28,6 +28,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const { logout, user } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   // 路由变化时关闭侧边栏
   useEffect(() => {
@@ -37,6 +38,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const handleLogout = () => {
     logout();
     router.push('/login');
+  };
+
+  const handleClearCache = async () => {
+    setClearing(true);
+    try {
+      const res = await fetch('/api/revalidate', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('缓存已清除');
+      } else {
+        alert('清除失败: ' + (data.error || '未知错误'));
+      }
+    } catch {
+      alert('清除失败');
+    } finally {
+      setClearing(false);
+    }
   };
 
   return (
@@ -116,14 +134,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <Link
-            href="/"
-            target="_blank"
-            className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1 ml-auto"
-          >
-            查看首页
-            <span>↗</span>
-          </Link>
+          <div className="flex items-center gap-3 ml-auto">
+            <button
+              onClick={handleClearCache}
+              disabled={clearing}
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1 disabled:opacity-50"
+              title="清除前端缓存"
+            >
+              {clearing ? '清除中...' : '🔄 清除缓存'}
+            </button>
+            <Link
+              href="/"
+              target="_blank"
+              className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+            >
+              查看首页
+              <span>↗</span>
+            </Link>
+          </div>
         </div>
         <div className="p-4 lg:p-6">
           {children}

@@ -1,6 +1,14 @@
 // 服务端 API 调用（用于 SSR）
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3012';
 
+// 缓存时间配置（秒），可通过环境变量覆盖，设为 0 禁用缓存
+const CACHE_TIME = {
+  default: Number(process.env.CACHE_DEFAULT) || 60, // 默认缓存时间
+  settings: Number(process.env.CACHE_SETTINGS) || 60, // 网站设置、幻灯片、菜单等
+  articles: Number(process.env.CACHE_ARTICLES) || 60, // 文章列表、文章详情
+  static: Number(process.env.CACHE_STATIC) || 300, // 分类、标签、主题、知识库等变化少的数据
+};
+
 interface FetchOptions {
   revalidate?: number | false;
   tags?: string[];
@@ -10,7 +18,7 @@ async function fetchAPI<T>(endpoint: string, options: FetchOptions = {}): Promis
   try {
     const res = await fetch(`${API_URL}/api${endpoint}`, {
       next: {
-        revalidate: options.revalidate ?? 60,
+        revalidate: options.revalidate ?? CACHE_TIME.default,
         tags: options.tags,
       },
     });
@@ -42,21 +50,21 @@ export async function getArticles(params?: {
   // 当有筛选条件时，使用较短的缓存时间
   const hasFilters = params?.categoryId || params?.tagId || params?.search;
   return fetchAPI<{ items: any[]; total: number }>(`/articles/published${query ? `?${query}` : ''}`, {
-    revalidate: hasFilters ? 10 : 60,
+    revalidate: hasFilters ? 10 : CACHE_TIME.articles,
     tags: ['articles'],
   });
 }
 
 export async function getArticleBySlug(slug: string) {
   return fetchAPI<any>(`/articles/${slug}`, {
-    revalidate: 60,
+    revalidate: CACHE_TIME.articles,
     tags: ['articles', `article-${slug}`],
   });
 }
 
 export async function getPopularArticles(limit = 5) {
   return fetchAPI<any[]>(`/articles/popular?limit=${limit}`, {
-    revalidate: 300,
+    revalidate: CACHE_TIME.static,
     tags: ['articles'],
   });
 }
@@ -64,14 +72,14 @@ export async function getPopularArticles(limit = 5) {
 // 分类相关
 export async function getCategories() {
   return fetchAPI<any[]>('/categories', {
-    revalidate: 300,
+    revalidate: CACHE_TIME.static,
     tags: ['categories'],
   });
 }
 
 export async function getCategoryBySlug(slug: string) {
   return fetchAPI<any>(`/categories/slug/${slug}`, {
-    revalidate: 300,
+    revalidate: CACHE_TIME.static,
     tags: ['categories'],
   });
 }
@@ -79,14 +87,14 @@ export async function getCategoryBySlug(slug: string) {
 // 标签相关
 export async function getTags() {
   return fetchAPI<any[]>('/tags', {
-    revalidate: 300,
+    revalidate: CACHE_TIME.static,
     tags: ['tags'],
   });
 }
 
 export async function getTagBySlug(slug: string) {
   return fetchAPI<any>(`/tags/slug/${slug}`, {
-    revalidate: 300,
+    revalidate: CACHE_TIME.static,
     tags: ['tags'],
   });
 }
@@ -94,7 +102,7 @@ export async function getTagBySlug(slug: string) {
 // 设置相关
 export async function getPublicSettings() {
   return fetchAPI<Record<string, string>>('/settings/public', {
-    revalidate: 300,
+    revalidate: CACHE_TIME.settings,
     tags: ['settings'],
   });
 }
@@ -102,7 +110,7 @@ export async function getPublicSettings() {
 // 主题相关
 export async function getActiveTheme() {
   return fetchAPI<any>('/themes/active', {
-    revalidate: 300,
+    revalidate: CACHE_TIME.settings, // 主题切换需要较快生效
     tags: ['themes'],
   });
 }
@@ -110,14 +118,14 @@ export async function getActiveTheme() {
 // 知识库相关
 export async function getKnowledgeDocs() {
   return fetchAPI<any[]>('/knowledge', {
-    revalidate: 300,
+    revalidate: CACHE_TIME.static,
     tags: ['knowledge'],
   });
 }
 
 export async function getKnowledgeDocBySlug(slug: string) {
   return fetchAPI<any>(`/knowledge/${slug}`, {
-    revalidate: 300,
+    revalidate: CACHE_TIME.static,
     tags: ['knowledge'],
   });
 }
@@ -125,7 +133,7 @@ export async function getKnowledgeDocBySlug(slug: string) {
 // 页面相关
 export async function getPageBySlug(slug: string) {
   return fetchAPI<any>(`/pages/slug/${slug}`, {
-    revalidate: 300,
+    revalidate: CACHE_TIME.static,
     tags: ['pages'],
   });
 }
