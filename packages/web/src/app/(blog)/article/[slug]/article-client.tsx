@@ -130,11 +130,11 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           </div>
         )}
 
-        <div className="flex">
+        <div className="flex items-start">
           {/* 左侧固定目录 - 仅桌面端 */}
           {toc.length > 0 && (
-            <aside className="hidden xl:block w-56 shrink-0 px-4">
-              <div className="sticky top-20 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+            <aside className="hidden xl:block w-56 shrink-0 px-4 sticky top-20">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <span>📑</span> 目录
                 </h3>
@@ -237,7 +237,7 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           </div>
         )}
 
-        <div className="flex gap-8">
+        <div className="flex gap-8 items-start">
           {/* 文章内容 */}
           <div className={toc.length > 0 ? 'flex-1 min-w-0' : 'w-full'}>
             <ArticleDetail article={article} config={themeConfig} />
@@ -252,8 +252,8 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
 
           {/* 右侧固定目录 - 仅桌面端，预留顶部间距 */}
           {toc.length > 0 && (
-            <aside className="hidden xl:block w-64 shrink-0">
-              <div className={`sticky top-28 p-5 rounded-2xl border backdrop-blur-sm ${tocBgClass}`}>
+            <aside className="hidden xl:block w-64 shrink-0 sticky top-28">
+              <div className={`p-5 rounded-2xl border backdrop-blur-sm ${tocBgClass}`}>
                 <h3 className={`font-bold text-sm mb-4 flex items-center gap-2 ${tocTextClass}`}>
                   <span>📑</span> 目录
                 </h3>
@@ -381,11 +381,11 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           </div>
         )}
 
-        <div className="flex gap-8">
+        <div className="flex gap-8 items-start">
           {/* 左侧固定目录 - 仅桌面端 */}
           {toc.length > 0 && (
-            <aside className="hidden xl:block w-56 shrink-0">
-              <div className="sticky top-24 p-5 rounded-[32px] border-2 border-white dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl">
+            <aside className="hidden xl:block w-56 shrink-0 sticky top-28">
+              <div className="p-5 rounded-[32px] border-2 border-white dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl">
                 <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <span>📑</span> 目录
                 </h3>
