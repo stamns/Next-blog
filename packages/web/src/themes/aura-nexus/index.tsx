@@ -589,7 +589,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
             prose-blockquote:!text-slate-300
             prose-blockquote:border-l-[10px] prose-blockquote:border-red-500
             prose-code:text-red-400
-            prose-pre:bg-slate-800
+            prose-pre:bg-slate-100 dark:prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-200 dark:prose-pre:border-slate-700
             prose-li:!text-slate-200
             prose-img:rounded-[2rem] md:prose-img:rounded-[3rem]
             [&_*]:!text-inherit"
@@ -640,7 +640,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
             prose-a:text-indigo-400
             prose-blockquote:!text-slate-300
             prose-code:text-rose-400
-            prose-pre:bg-slate-800
+            prose-pre:bg-slate-100 dark:prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-200 dark:prose-pre:border-slate-700
             prose-li:!text-slate-200
             [&_*]:!text-inherit"
           dangerouslySetInnerHTML={{ __html: article.htmlContent || article.content }}
@@ -708,7 +708,7 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
           prose-a:text-purple-400
           prose-blockquote:!text-slate-300
           prose-code:text-cyan-400
-          prose-pre:bg-slate-800
+          prose-pre:bg-slate-100 dark:prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-200 dark:prose-pre:border-slate-700
           prose-li:!text-slate-200
           [&_*]:!text-inherit"
         dangerouslySetInnerHTML={{ __html: article.htmlContent || article.content }}

@@ -597,88 +597,90 @@ function ArticleDetail({ article, config = defaultConfig }: ArticleDetailProps &
         </div>
       )}
 
-      {/* 阅读区布局 - 左侧边栏统一宽度280px */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-12">
-        <aside className="xl:col-span-3 hidden xl:block space-y-6" style={{ width: '280px' }}>
-          {/* System Context 模块 */}
-          <div className={`p-6 border-2 rounded-2xl space-y-6 ${p.glass} ${p.darkGlass}`} style={{ borderColor: `${p.primary}30` }}>
-            <h4 className={`text-[10px] font-black tracking-[0.3em] opacity-50 uppercase ${p.text} ${p.darkText}`}>
-              System Context
-            </h4>
-            <p className={`text-xs font-bold leading-relaxed italic opacity-70 ${p.text} ${p.darkText}`}>
-              当前处于高维同步模式。内容已通过全息协议验证。情感指数：100% 多巴胺。
-            </p>
-            <div className="flex gap-4">
-              <div className="w-2 h-2 rounded-full bg-pink-500 animate-ping" />
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" style={{ animationDelay: '0.3s' }} />
-              <div className="w-2 h-2 rounded-full bg-yellow-500 animate-ping" style={{ animationDelay: '0.7s' }} />
-            </div>
-          </div>
-
-          {/* Views 模块 */}
-          <div className={`p-6 rounded-2xl ${p.glass} ${p.darkGlass} text-center`}>
-            <Eye size={24} className="mx-auto mb-2 opacity-40" />
-            <p className={`text-2xl font-black ${p.title} ${p.darkTitle}`}>{article.viewCount || 0}</p>
-            <p className={`text-[10px] font-black uppercase tracking-widest opacity-40 ${p.text} ${p.darkText}`}>Views</p>
-          </div>
-
-          {/* 目录模块 - 放在 Views 下面 */}
-          {toc.length > 0 && (
-            <div className={`p-6 rounded-2xl ${p.glass} ${p.darkGlass} border border-white/10`}>
-              <h4 className={`text-[10px] font-black tracking-[0.3em] opacity-50 uppercase mb-4 ${p.text} ${p.darkText}`}>
-                Navigation
+      {/* 阅读区布局 - 左侧边栏统一宽度280px，固定定位 */}
+      <div className="flex gap-8 md:gap-12">
+        <aside className="hidden xl:block shrink-0" style={{ width: '280px' }}>
+          <div className="sticky top-24 space-y-6">
+            {/* System Context 模块 */}
+            <div className={`p-6 border-2 rounded-2xl space-y-6 ${p.glass} ${p.darkGlass}`} style={{ borderColor: `${p.primary}30` }}>
+              <h4 className={`text-[10px] font-black tracking-[0.3em] opacity-50 uppercase ${p.text} ${p.darkText}`}>
+                System Context
               </h4>
-              <nav className="text-sm max-h-[50vh] overflow-y-auto pr-1">
-                <ul className="space-y-2">
-                  {toc.map((item: any, index: number) => (
-                    <li key={`${item.id}-${index}`}>
-                      <a
-                        href={`#${item.id}`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const element = document.getElementById(item.id);
-                          if (element) {
-                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            window.history.pushState(null, '', `#${item.id}`);
-                          }
-                        }}
-                        className={`block py-1 transition-colors opacity-70 hover:opacity-100 hover:text-pink-400 line-clamp-2 ${p.text} ${p.darkText}`}
-                        title={item.text}
-                      >
-                        {item.text}
-                      </a>
-                      {item.children && item.children.length > 0 && (
-                        <ul className="ml-3 mt-1 space-y-1 border-l border-white/20 pl-2">
-                          {item.children.map((child: any, childIndex: number) => (
-                            <li key={`${child.id}-${childIndex}`}>
-                              <a
-                                href={`#${child.id}`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  const element = document.getElementById(child.id);
-                                  if (element) {
-                                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    window.history.pushState(null, '', `#${child.id}`);
-                                  }
-                                }}
-                                className={`block py-0.5 text-xs transition-colors opacity-60 hover:opacity-100 hover:text-pink-400 line-clamp-1 ${p.text} ${p.darkText}`}
-                                title={child.text}
-                              >
-                                {child.text}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </nav>
+              <p className={`text-xs font-bold leading-relaxed italic opacity-70 ${p.text} ${p.darkText}`}>
+                当前处于高维同步模式。内容已通过全息协议验证。情感指数：100% 多巴胺。
+              </p>
+              <div className="flex gap-4">
+                <div className="w-2 h-2 rounded-full bg-pink-500 animate-ping" />
+                <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" style={{ animationDelay: '0.3s' }} />
+                <div className="w-2 h-2 rounded-full bg-yellow-500 animate-ping" style={{ animationDelay: '0.7s' }} />
+              </div>
             </div>
-          )}
+
+            {/* Views 模块 */}
+            <div className={`p-6 rounded-2xl ${p.glass} ${p.darkGlass} text-center`}>
+              <Eye size={24} className="mx-auto mb-2 opacity-40" />
+              <p className={`text-2xl font-black ${p.title} ${p.darkTitle}`}>{article.viewCount || 0}</p>
+              <p className={`text-[10px] font-black uppercase tracking-widest opacity-40 ${p.text} ${p.darkText}`}>Views</p>
+            </div>
+
+            {/* 目录模块 - 放在 Views 下面 */}
+            {toc.length > 0 && (
+              <div className={`p-6 rounded-2xl ${p.glass} ${p.darkGlass} border border-white/10`}>
+                <h4 className={`text-[10px] font-black tracking-[0.3em] opacity-50 uppercase mb-4 ${p.text} ${p.darkText}`}>
+                  Navigation
+                </h4>
+                <nav className="text-sm max-h-[40vh] overflow-y-auto pr-1">
+                  <ul className="space-y-2">
+                    {toc.map((item: any, index: number) => (
+                      <li key={`${item.id}-${index}`}>
+                        <a
+                          href={`#${item.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const element = document.getElementById(item.id);
+                            if (element) {
+                              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              window.history.pushState(null, '', `#${item.id}`);
+                            }
+                          }}
+                          className={`block py-1 transition-colors opacity-70 hover:opacity-100 hover:text-pink-400 line-clamp-2 ${p.text} ${p.darkText}`}
+                          title={item.text}
+                        >
+                          {item.text}
+                        </a>
+                        {item.children && item.children.length > 0 && (
+                          <ul className="ml-3 mt-1 space-y-1 border-l border-white/20 pl-2">
+                            {item.children.map((child: any, childIndex: number) => (
+                              <li key={`${child.id}-${childIndex}`}>
+                                <a
+                                  href={`#${child.id}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const element = document.getElementById(child.id);
+                                    if (element) {
+                                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                      window.history.pushState(null, '', `#${child.id}`);
+                                    }
+                                  }}
+                                  className={`block py-0.5 text-xs transition-colors opacity-60 hover:opacity-100 hover:text-pink-400 line-clamp-1 ${p.text} ${p.darkText}`}
+                                  title={child.text}
+                                >
+                                  {child.text}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </div>
+            )}
+          </div>
         </aside>
 
-        <div className="xl:col-span-9">
+        <div className="flex-1 min-w-0">
           <div
             className={`prose prose-lg md:prose-2xl max-w-none
               prose-headings:font-black prose-headings:tracking-tighter

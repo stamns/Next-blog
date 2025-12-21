@@ -35,10 +35,14 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
   const isAetherBloomTheme = themeName === 'aether-bloom';
   const isChromaDimensionTheme = themeName === 'chroma-dimension';
   const isVibrantTheme = themeName === 'vibrant';
+  const isClassicTheme = themeName === 'classic';
+  const isMinimalTheme = themeName === 'minimal';
+  const isMagazineTheme = themeName === 'magazine';
   const isDarkTheme = isCyberTheme || isAuraNexusTheme;
   
   // 这些主题有自己的布局，不显示侧边 TOC
-  const useSimpleLayout = isVibePulseTheme || isAetherBloomTheme || isChromaDimensionTheme || isVibrantTheme;
+  // classic/minimal/magazine 主题的 BlogLayout 已有侧边栏，不需要额外的目录侧边栏
+  const useSimpleLayout = isVibePulseTheme || isAetherBloomTheme || isChromaDimensionTheme || isVibrantTheme || isClassicTheme || isMinimalTheme || isMagazineTheme;
   const showSidebarToc = !useSimpleLayout && toc.length > 0;
   
   const tocCardClass = isDarkTheme 
@@ -246,10 +250,10 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
             )}
           </div>
 
-          {/* 右侧固定目录 - 仅桌面端 */}
+          {/* 右侧固定目录 - 仅桌面端，预留顶部间距 */}
           {toc.length > 0 && (
             <aside className="hidden xl:block w-64 shrink-0">
-              <div className={`sticky top-24 p-5 rounded-2xl border backdrop-blur-sm ${tocBgClass}`}>
+              <div className={`sticky top-28 p-5 rounded-2xl border backdrop-blur-sm ${tocBgClass}`}>
                 <h3 className={`font-bold text-sm mb-4 flex items-center gap-2 ${tocTextClass}`}>
                   <span>📑</span> 目录
                 </h3>
