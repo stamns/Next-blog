@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -8,6 +8,21 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading, error } = useAuthStore();
   const [form, setForm] = useState({ username: '', password: '' });
+  const [siteName, setSiteName] = useState('博客');
+
+  // 获取网站名称
+  useEffect(() => {
+    fetch('/api/settings/public')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data?.siteName) {
+          setSiteName(data.data.siteName);
+        }
+      })
+      .catch(() => {
+        // 获取失败使用默认值
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +38,7 @@ export default function LoginPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              NextBlog
+              {siteName}
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mt-2">
               登录后台管理系统

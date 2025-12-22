@@ -41,7 +41,12 @@ async function request<T>(
   const data: ApiResponse<T> = await response.json();
 
   if (!response.ok || !data.success) {
-    throw new Error(getErrorMessage(data.error));
+    // 在错误消息中包含状态码，便于识别认证错误
+    const errorMsg = getErrorMessage(data.error);
+    if (response.status === 401) {
+      throw new Error(`401: ${errorMsg}`);
+    }
+    throw new Error(errorMsg);
   }
 
   return data.data;

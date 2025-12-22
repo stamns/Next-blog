@@ -62,9 +62,23 @@ export const useAuthStore = create<AuthState>()(
         try {
           const data = await api.get<{ user: User }>('/auth/me');
           set({ user: data.user, isAuthenticated: true, isLoading: false });
-        } catch {
-          set({ user: null, token: null, isAuthenticated: false, isLoading: false });
-          localStorage.removeItem('token');
+        } catch (err) {
+          // 只有在明确的认证错误时才清除状态
+          // 网络错误或服务器错误不应该导致退出
+          const message = err instanceof Error ? err.message : '';
+          const isAuthError = message.includes('401') || 
+                              message.includes('未授权') || 
+                              message.includes('Unauthorized') ||
+                              message.includes('token') ||
+                              message.includes('Token');
+          
+          if (isAuthError) {
+            set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+            localStorage.removeItem('token');
+          } else {
+            // 网络错误等情况，保持当前认证状态
+            set({ isLoading: false });
+          }
         }
       },
     }),
