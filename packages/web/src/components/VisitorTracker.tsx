@@ -115,16 +115,19 @@ function getUtmParams() {
 // 发送追踪数据
 async function sendTrackingData(data: any) {
   try {
+    console.log('[VisitorTracker] Sending tracking data:', data.eventType, data.path);
     // 使用相对路径，让反向代理处理
     // 不使用 NEXT_PUBLIC_API_URL，因为那是服务器内部地址
-    await fetch('/api/analytics/track', {
+    const response = await fetch('/api/analytics/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
       keepalive: true, // 确保页面关闭时也能发送
     });
+    const result = await response.json();
+    console.log('[VisitorTracker] Response:', response.status, result);
   } catch (error) {
-    console.error('Tracking error:', error);
+    console.error('[VisitorTracker] Tracking error:', error);
   }
 }
 

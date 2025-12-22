@@ -7,10 +7,17 @@ const router = Router();
 // 公开接口：记录访客数据（前端调用）
 router.post('/track', async (req: Request, res: Response) => {
   try {
+    console.log('[Analytics] Track request received:', {
+      visitorId: req.body.visitorId,
+      path: req.body.path,
+      eventType: req.body.eventType,
+      ip: req.ip,
+    });
     const result = await analyticsService.track(req.body);
+    console.log('[Analytics] Track success:', result);
     res.json({ success: true, data: result });
   } catch (error) {
-    console.error('Track error:', error);
+    console.error('[Analytics] Track error:', error);
     res.status(500).json({ success: false, error: 'Failed to track' });
   }
 });
