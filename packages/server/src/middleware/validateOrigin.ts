@@ -30,11 +30,21 @@ export async function validateOrigin(req: Request, res: Response, next: NextFunc
     return next(); // URL 解析失败，跳过验证
   }
 
+  // 如果没有 Origin 和 Referer（如 keepalive 请求、beacon 等），允许通过
+  // 这类请求通常是页面关闭时发送的，浏览器可能不会附带这些头
+  if (!origin && !referer) {
+    return next();
+  }
+
+  // 标准化域名比较（忽略 www 前缀）
+  const normalizeHost = (host: string) => host.replace(/^www\./, '');
+  const normalizedAllowed = normalizeHost(allowedHost);
+
   // 验证 Origin
   if (origin) {
     try {
       const originHost = new URL(origin).host;
-      if (originHost === allowedHost) {
+      if (normalizeHost(originHost) === normalizedAllowed) {
         return next();
       }
     } catch {
@@ -46,7 +56,7 @@ export async function validateOrigin(req: Request, res: Response, next: NextFunc
   if (referer) {
     try {
       const refererHost = new URL(referer).host;
-      if (refererHost === allowedHost) {
+      if (normalizeHost(refererHost) === normalizedAllowed) {
         return next();
       }
     } catch {
@@ -59,6 +69,7 @@ export async function validateOrigin(req: Request, res: Response, next: NextFunc
     origin,
     referer,
     allowedHost,
+    siteUrl,
     path: req.path,
   });
   return res.status(403).json({ success: false, error: 'Forbidden: Invalid origin' });
