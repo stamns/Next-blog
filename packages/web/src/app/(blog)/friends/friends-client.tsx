@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useSiteSettingsContext } from '@/contexts/site-settings-context';
 import { useThemeColorScheme } from '@/contexts/theme-context';
-import type { ColorScheme } from '@/themes/shared';
+import type { ColorScheme } from '@/themes';
 
 interface Props {
   links: FriendLink[];

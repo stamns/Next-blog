@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useThemeColorScheme } from '@/contexts/theme-context';
 import { useSiteSettingsContext } from '@/contexts/site-settings-context';
-import type { ColorScheme } from '@/themes/shared';
+import type { ColorScheme } from '@/themes';
 
 interface Props {
   projects: Project[];

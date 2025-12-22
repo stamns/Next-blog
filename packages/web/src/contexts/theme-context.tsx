@@ -1,9 +1,8 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
-import { getTheme, type ThemeConfig } from '@/themes';
+import { getTheme, type ThemeConfig, type ColorScheme } from '@/themes';
 import { 
-  type ColorScheme, 
   defaultColorScheme, 
   builtinColorSchemes,
   chromaDimensionPalettes,
