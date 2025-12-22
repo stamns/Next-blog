@@ -115,8 +115,9 @@ function getUtmParams() {
 // 发送追踪数据
 async function sendTrackingData(data: any) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    await fetch(`${apiUrl}/api/analytics/track`, {
+    // 使用相对路径，让反向代理处理
+    // 不使用 NEXT_PUBLIC_API_URL，因为那是服务器内部地址
+    await fetch('/api/analytics/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
