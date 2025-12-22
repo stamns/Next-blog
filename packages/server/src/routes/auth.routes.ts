@@ -1,10 +1,20 @@
 import { Router, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { userService } from '../services/user.service.js';
 import { generateToken, authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/errorHandler.js';
 
 const router = Router();
+
+// 登录接口的 rate limit（防止暴力破解）
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 10, // 每15分钟最多10次尝试
+  message: { success: false, error: '登录尝试次数过多，请15分钟后再试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // 验证 schema
 const loginSchema = z.object({
@@ -21,7 +31,7 @@ const changePasswordSchema = z.object({
  * POST /api/auth/login
  * 用户登录
  */
-router.post('/login', async (req, res, next) => {
+router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const { username, password } = loginSchema.parse(req.body);
 

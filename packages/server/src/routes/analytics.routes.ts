@@ -1,7 +1,45 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import geoip from 'geoip-lite';
 import { analyticsService } from '../services/analytics.service.js';
-import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
+import { validateOrigin } from '../middleware/validateOrigin.js';
+
+// 从请求中获取真实 IP
+function getClientIp(req: Request): string | undefined {
+  // 优先从 X-Forwarded-For 获取（反向代理场景）
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const ips = (typeof forwarded === 'string' ? forwarded : forwarded[0]).split(',');
+    return ips[0].trim();
+  }
+  // 其次从 X-Real-IP 获取
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) {
+    return typeof realIp === 'string' ? realIp : realIp[0];
+  }
+  // 最后使用 req.ip
+  return req.ip;
+}
+
+// 解析 IP 地理位置
+function getGeoInfo(ip: string | undefined): { country?: string; region?: string; city?: string } {
+  if (!ip) return {};
+  
+  // 处理 IPv6 本地地址
+  if (ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    return { country: '本地', region: '本地', city: '本地' };
+  }
+  
+  const geo = geoip.lookup(ip);
+  if (!geo) return {};
+  
+  return {
+    country: geo.country || undefined,
+    region: geo.region || undefined,
+    city: geo.city || undefined,
+  };
+}
 
 const router = Router();
 
@@ -15,15 +53,24 @@ const trackingLimiter = rateLimit({
 });
 
 // 公开接口：记录访客数据（前端调用）
-router.post('/track', trackingLimiter, async (req: Request, res: Response) => {
+router.post('/track', trackingLimiter, validateOrigin, async (req: Request, res: Response) => {
   try {
+    const ip = getClientIp(req);
+    const geoInfo = getGeoInfo(ip);
+    
     console.log('[Analytics] Track request received:', {
       visitorId: req.body.visitorId,
       path: req.body.path,
       eventType: req.body.eventType,
-      ip: req.ip,
+      ip,
+      geo: geoInfo,
     });
-    const result = await analyticsService.track(req.body);
+    
+    const result = await analyticsService.track({
+      ...req.body,
+      ip,
+      ...geoInfo,
+    });
     console.log('[Analytics] Track success:', result);
     res.json({ success: true, data: result });
   } catch (error) {

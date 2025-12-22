@@ -22,6 +22,10 @@ export interface TrackingData {
   screenHeight?: number;
   language?: string;
   timezone?: string;
+  // 地理位置信息
+  country?: string;
+  region?: string;
+  city?: string;
   // 页面事件
   eventType: 'pageview' | 'pageleave' | 'session_end';
   duration?: number;
@@ -51,6 +55,9 @@ export const analyticsService = {
       screenHeight,
       language,
       timezone,
+      country,
+      region,
+      city,
       eventType,
       duration,
       scrollDepth,
@@ -62,6 +69,9 @@ export const analyticsService = {
       create: {
         visitorId,
         ip,
+        country,
+        region,
+        city,
         browser,
         browserVer,
         os,
@@ -74,6 +84,10 @@ export const analyticsService = {
       },
       update: {
         lastVisit: new Date(),
+        ...(ip && { ip }),
+        ...(country && { country }),
+        ...(region && { region }),
+        ...(city && { city }),
         ...(browser && { browser }),
         ...(browserVer && { browserVer }),
         ...(os && { os }),

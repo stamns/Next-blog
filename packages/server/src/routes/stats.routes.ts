@@ -1,8 +1,19 @@
 import { Router, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { statsService } from '../services/stats.service.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { validateOrigin } from '../middleware/validateOrigin.js';
 
 const router = Router();
+
+// 记录浏览的 rate limit
+const recordLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1分钟
+  max: 60, // 每分钟最多60次
+  message: { success: false, error: 'Too many requests' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 /**
  * GET /api/stats/public
@@ -46,7 +57,7 @@ router.get('/views', authenticate, async (req: AuthRequest, res: Response, next)
   }
 });
 
-router.post('/record', async (req, res, next) => {
+router.post('/record', recordLimiter, validateOrigin, async (req, res, next) => {
   try {
     const { articleId, path } = req.body;
     const view = await statsService.recordView({

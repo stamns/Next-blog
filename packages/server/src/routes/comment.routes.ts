@@ -1,10 +1,21 @@
 import { Router, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { commentService } from '../services/comment.service.js';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/errorHandler.js';
+import { validateOrigin } from '../middleware/validateOrigin.js';
 
 const router = Router();
+
+// 评论提交的 rate limit（更严格）
+const commentLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1分钟
+  max: 5, // 每分钟最多5条评论
+  message: { success: false, error: '评论太频繁，请稍后再试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const createCommentSchema = z.object({
   content: z.string().min(1, 'Content is required'),
@@ -46,7 +57,7 @@ router.get('/pending/count', authenticate, async (_req, res, next) => {
   }
 });
 
-router.post('/', optionalAuth, async (req: AuthRequest, res: Response, next) => {
+router.post('/', commentLimiter, validateOrigin, optionalAuth, async (req: AuthRequest, res: Response, next) => {
   try {
     const input = createCommentSchema.parse(req.body);
     const comment = await commentService.create({ ...input, userId: req.user?.userId });
