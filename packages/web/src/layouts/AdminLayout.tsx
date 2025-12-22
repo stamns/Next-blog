@@ -51,10 +51,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       if (data.success) {
         alert('缓存已清除');
       } else {
+        console.error('Cache clear failed:', data);
         alert('清除失败: ' + (data.error || '未知错误'));
       }
-    } catch {
-      alert('清除失败');
+    } catch (err) {
+      console.error('Cache clear error:', err);
+      const errorMsg = err instanceof Error ? err.message : '网络错误';
+      alert('清除失败: ' + errorMsg);
     } finally {
       setClearing(false);
     }
